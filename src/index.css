@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-base: #6c63ff;
+  --color-brand-dark: #4b43d4;
+  --color-bg-app: #0f1117;
+  --color-bg-panel: #1a1d2e;
+  --color-bg-sidebar: #13152a;
+  --color-bg-hover: #242740;
+  --color-border-soft: #2a2d3e;
+  --color-border-hard: #353853;
+  --color-text-primary: #e2e4f0;
+  --color-text-secondary: #8b8fa8;
+  --color-text-muted: #565a75;
+  --color-priority-high: #ef4444;
+  --color-priority-medium: #6c63ff;
+  --color-priority-low: #22c55e;
+  --color-badge-red: #ef4444;
+  --color-badge-purple: #6c63ff;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--color-bg-app);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes markerPulse {
+  0%, 100% { transform: scale(1); opacity: 0.35; }
+  50% { transform: scale(2.2); opacity: 0; }
+}
+
+.marker-pulse-ring {
+  animation: markerPulse 1.8s ease-out infinite;
+}
