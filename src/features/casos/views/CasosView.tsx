@@ -5,6 +5,7 @@ import { useListarCasos } from '../hooks/useListarCasos'
 import { CasoCard } from '../components/CasoCard'
 import { CrearCasoModal } from '../components/CrearCasoModal'
 import { AsignarAgenteModal } from '../components/AsignarAgenteModal'
+import { ReportesCarouselModal } from '../components/ReportesCarouselModal'
 
 type Tab = 'activos' | 'cerrados' | 'mas_recientes'
 
@@ -26,6 +27,7 @@ export function CasosView() {
   const [busqueda, setBusqueda] = useState('')
   const [mostrarCrear, setMostrarCrear] = useState(false)
   const [casoParaAsignar, setCasoParaAsignar] = useState<Caso | null>(null)
+  const [casoParaReportes, setCasoParaReportes] = useState<Caso | null>(null)
 
   const { data: queryData, isLoading, isError, refetch } = useListarCasos({ limit: 100 })
 
@@ -158,7 +160,9 @@ export function CasosView() {
         {!isLoading &&
           !isError &&
           casosFiltrados.map((caso) => (
-            <CasoCard key={caso.id} caso={caso} onAsignar={setCasoParaAsignar} />
+            <div key={caso.id} onClick={() => setCasoParaReportes(caso)} className="cursor-pointer">
+              <CasoCard caso={caso} onAsignar={setCasoParaAsignar} />
+            </div>
           ))}
       </div>
 
@@ -166,6 +170,11 @@ export function CasosView() {
       {casoParaAsignar && (
         <AsignarAgenteModal caso={casoParaAsignar} onClose={() => setCasoParaAsignar(null)} />
       )}
+      <ReportesCarouselModal
+        caso={casoParaReportes}
+        isOpen={!!casoParaReportes}
+        onClose={() => setCasoParaReportes(null)}
+      />
     </div>
   )
 }
