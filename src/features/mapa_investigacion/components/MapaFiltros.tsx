@@ -9,6 +9,10 @@ interface Props {
 export function MapaFiltros({ reportes }: Props) {
   const soloPrioridad = useMapaStore((s) => s.soloPrioridad)
   const setSoloPrioridad = useMapaStore((s) => s.setSoloPrioridad)
+  const soloValidados = useMapaStore((s) => s.soloValidados)
+  const setSoloValidados = useMapaStore((s) => s.setSoloValidados)
+  const soloPendientes = useMapaStore((s) => s.soloPendientes)
+  const setSoloPendientes = useMapaStore((s) => s.setSoloPendientes)
   const ordenFecha = useMapaStore((s) => s.ordenFecha)
   const setOrdenFecha = useMapaStore((s) => s.setOrdenFecha)
   const reset = useMapaStore((s) => s.reset)
@@ -17,6 +21,34 @@ export function MapaFiltros({ reportes }: Props) {
   const prioritarios = reportes.filter((r) => r.prioridad_policial).length
   const validados = reportes.filter((r) => r.validado).length
   const pendientes = total - validados
+
+  // Funciones de manejo exclusivas para cada filtro
+  const handleTogglePrioridad = () => {
+    const nuevoEstado = !soloPrioridad
+    setSoloPrioridad(nuevoEstado)
+    if (nuevoEstado) {
+      setSoloValidados(false)
+      setSoloPendientes(false)
+    }
+  }
+
+  const handleToggleValidados = () => {
+    const nuevoEstado = !soloValidados
+    setSoloValidados(nuevoEstado)
+    if (nuevoEstado) {
+      setSoloPrioridad(false)
+      setSoloPendientes(false)
+    }
+  }
+
+  const handleTogglePendientes = () => {
+    const nuevoEstado = !soloPendientes
+    setSoloPendientes(nuevoEstado)
+    if (nuevoEstado) {
+      setSoloPrioridad(false)
+      setSoloValidados(false)
+    }
+  }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -50,25 +82,67 @@ export function MapaFiltros({ reportes }: Props) {
           </p>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between bg-bg-hover rounded-lg px-3 py-2.5">
+            {/* SOLO PRIORITARIOS */}
+            <div className="flex items-center justify-between bg-bg-hover rounded-lg px-3 py-1.5">
               <div className="flex items-center gap-2">
                 <Flag size={14} className="text-priority-high" />
                 <span className="text-text-primary text-sm">Solo prioritarios</span>
               </div>
               <button
-                onClick={() => setSoloPrioridad(!soloPrioridad)}
-                className={`w-10 h-5 rounded-full transition-colors relative ${
+                onClick={handleTogglePrioridad}
+                className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 flex items-center px-0.5 ${
                   soloPrioridad ? 'bg-brand-base' : 'bg-border-hard'
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
-                    soloPrioridad ? 'translate-x-5' : 'translate-x-0.5'
+                  className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                    soloPrioridad ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
               </button>
             </div>
 
+            {/* SOLO VALIDADOS */}
+            <div className="flex items-center justify-between bg-bg-hover rounded-lg px-3 py-1.5">
+              <div className="flex items-center gap-2">
+                <Flag size={14} className="text-priority-low" />
+                <span className="text-text-primary text-sm">Solo validados</span>
+              </div>
+              <button
+                onClick={handleToggleValidados}
+                className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 flex items-center px-0.5 ${
+                  soloValidados ? 'bg-brand-base' : 'bg-border-hard'
+                }`}
+              >
+                <span
+                  className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                    soloValidados ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* SOLO PENDIENTES */}
+            <div className="flex items-center justify-between bg-bg-hover rounded-lg px-3 py-1.5">
+              <div className="flex items-center gap-2">
+                <Flag size={14} className="text-brand-base" />
+                <span className="text-text-primary text-sm">Solo pendientes</span>
+              </div>
+              <button
+                onClick={handleTogglePendientes}
+                className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 flex items-center px-0.5 ${
+                  soloPendientes ? 'bg-brand-base' : 'bg-border-hard'
+                }`}
+              >
+                <span
+                  className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                    soloPendientes ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* ORDENAR POR FECHA */}
             <div>
               <label className="block text-text-secondary text-xs mb-1.5">Ordenar por fecha</label>
               <select

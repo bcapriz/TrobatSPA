@@ -21,6 +21,8 @@ export function MapaView() {
   const casoIdFiltro = useMapaStore((s) => s.casoIdFiltro)
   const setCasoIdFiltro = useMapaStore((s) => s.setCasoIdFiltro)
   const soloPrioridad = useMapaStore((s) => s.soloPrioridad)
+  const soloValidados = useMapaStore((s) => s.soloValidados)
+  const soloPendientes = useMapaStore((s) => s.soloPendientes)
   const ordenFecha = useMapaStore((s) => s.ordenFecha)
 
   const { data: reportesData, isLoading, isError } = useObtenerReportes()
@@ -30,12 +32,25 @@ export function MapaView() {
 
   const reportesFiltrados = useMemo(() => {
     const todos = reportesData?.data ?? []
-    let result = soloPrioridad ? todos.filter((r) => r.prioridad_policial) : todos
+    let result = todos
+
+    if (soloPrioridad) {
+      result = result.filter((r) => r.prioridad_policial)
+    }
+
+    if (soloValidados) {
+      result = result.filter((r) => r.validado)
+    }
+
+    if (soloPendientes) {
+      result = result.filter((r) => !r.validado)
+    }
+
     return [...result].sort((a, b) => {
       const diff = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       return ordenFecha === 'desc' ? -diff : diff
     })
-  }, [reportesData, soloPrioridad, ordenFecha])
+  }, [reportesData, soloPrioridad, soloValidados, soloPendientes, ordenFecha])
 
   const handleMarkerClick = (reporte: Reporte) => {
     setSelectedReporte((prev) => (prev?.id === reporte.id ? null : reporte))
