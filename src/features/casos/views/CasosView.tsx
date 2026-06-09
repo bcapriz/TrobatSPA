@@ -6,7 +6,7 @@ import { CasoCard } from '../components/CasoCard'
 import { CrearCasoModal } from '../components/CrearCasoModal'
 import { AsignarAgenteModal } from '../components/AsignarAgenteModal'
 
-type Tab = 'activos' | 'cerrados'
+type Tab = 'activos' | 'cerrados' | 'mas_recientes'
 
 function SkeletonCard() {
   return (
@@ -31,18 +31,22 @@ export function CasosView() {
 
   const casosFiltrados = useMemo(() => {
     const todos = queryData?.data ?? []
-    return todos.filter((c) => {
-      const matchTab =
-        tab === 'activos'
-          ? c.estado === 'investigacion_activa' || c.estado === 'suspendido'
-          : c.estado === 'resuelto' || c.estado === 'cerrado'
+    let filtered = todos
 
-      const matchBusqueda =
+    if (tab === 'activos') {
+      filtered = filtered.filter((c) => c.estado === 'investigacion_activa' || c.estado === 'suspendido')
+    } else if (tab === 'cerrados') {
+      filtered = filtered.filter((c) => c.estado === 'resuelto' || c.estado === 'cerrado')
+    } else if (tab === 'mas_recientes') {
+      filtered = filtered.sort((a, b) => new Date(b.fecha_creacion).getTime() - new Date(a.fecha_creacion).getTime())
+    }
+
+    // Aplicar búsqueda
+    return filtered.filter(
+      (c) =>
         !busqueda.trim() ||
         c.desaparecido.nombre.toLowerCase().includes(busqueda.toLowerCase())
-
-      return matchTab && matchBusqueda
-    })
+    )
   }, [queryData, tab, busqueda])
 
   const totalActivos = useMemo(
@@ -51,8 +55,9 @@ export function CasosView() {
   )
 
   const TAB_CONFIG: { key: Tab; label: string }[] = [
-    { key: 'activos', label: 'Casos activos' },
+    { key: 'activos', label: 'Activos' },
     { key: 'cerrados', label: 'Cerrados' },
+    { key: 'mas_recientes', label: 'Más recientes' },
   ]
 
   return (
