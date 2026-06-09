@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
-import { Loader2, AlertCircle, MapPin, Terminal } from 'lucide-react'
+import { Loader2, AlertCircle, MapPin, Terminal, Search, X } from 'lucide-react'
 import type { Reporte } from '../../../domain/models'
 import { useObtenerReportes } from '../hooks/useObtenerReportes'
 import { useListarCasos } from '../../casos/hooks/useListarCasos'
@@ -17,6 +17,7 @@ const BUENOS_AIRES = { lat: -34.6037, lng: -58.3816 }
 
 export function MapaView() {
   const [selectedReporte, setSelectedReporte] = useState<Reporte | null>(null)
+  const [searchCaso, setSearchCaso] = useState('')
 
   const casoIdFiltro = useMapaStore((s) => s.casoIdFiltro)
   const setCasoIdFiltro = useMapaStore((s) => s.setCasoIdFiltro)
@@ -28,7 +29,21 @@ export function MapaView() {
   const { data: reportesData, isLoading, isError } = useObtenerReportes()
   const { data: casosData } = useListarCasos({ limit: 50 })
 
-  const casos = casosData?.data ?? []
+  const casos = useMemo(() => {
+    const allCasos = casosData?.data ?? []
+    
+    // Filtrar por búsqueda
+    const filtered = searchCaso.trim()
+      ? allCasos.filter((c) =>
+          c.desaparecido.nombre.toLowerCase().includes(searchCaso.toLowerCase())
+        )
+      : allCasos
+    
+    // Ordenar por fecha más reciente y limitar a 4
+    return filtered
+      .sort((a, b) => new Date(b.fecha_creacion).getTime() - new Date(a.fecha_creacion).getTime())
+      .slice(0, 4)
+  }, [casosData, searchCaso])
 
   const reportesFiltrados = useMemo(() => {
     const todos = reportesData?.data ?? []
@@ -58,6 +73,28 @@ export function MapaView() {
 
   return (
     <div className="-m-6 flex flex-col" style={{ height: 'calc(100vh - 52px)' }}>
+      {/* Search bar */}
+      <div className="px-4 py-3 border-b border-border-soft bg-bg-panel flex-shrink-0">
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+          <input
+            type="text"
+            value={searchCaso}
+            onChange={(e) => setSearchCaso(e.target.value)}
+            placeholder="Buscar por nombre..."
+            className="w-full bg-bg-hover border border-border-soft rounded-lg px-3 py-2 pl-9 pr-8 text-text-primary text-sm placeholder-text-muted/50 focus:outline-none focus:border-brand-base transition-colors"
+          />
+          {searchCaso && (
+            <button
+              onClick={() => setSearchCaso('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-bg-panel rounded transition-colors"
+            >
+              <X size={14} className="text-text-muted" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Filter chips row */}
       <div className="flex items-center gap-2 px-4 h-12 border-b border-border-soft bg-bg-panel overflow-x-auto flex-shrink-0">
         <span className="text-text-muted text-xs font-medium flex-shrink-0">Caso:</span>
