@@ -101,9 +101,10 @@ function EstadoMenu({ caso }: { caso: Caso }) {
 interface CasoCardProps {
   caso: Caso
   onAsignar: (caso: Caso) => void
+  onReactivar: (caso: Caso) => void
 }
 
-export function CasoCard({ caso, onAsignar }: CasoCardProps) {
+export function CasoCard({ caso, onAsignar, onReactivar}: CasoCardProps) {
   const { desaparecido, estado, total_reportes, agentes_asignados, fecha_creacion } = caso
   const pill = ESTADO_PILL[estado]
   const initials = desaparecido.nombre
@@ -162,6 +163,19 @@ export function CasoCard({ caso, onAsignar }: CasoCardProps) {
             Asignar
           </button>
         )}
+
+        {(caso.estado === 'cerrado') && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onReactivar(caso)
+            }}
+            className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary border border-border-soft hover:border-border-hard px-2.5 py-1.5 rounded-lg transition-colors"
+          >
+            Reactivar
+          </button>
+        )}
+
       </div>
     </div>
   )

@@ -6,6 +6,7 @@ import { CasoCard } from '../components/CasoCard'
 import { CrearCasoModal } from '../components/CrearCasoModal'
 import { AsignarAgenteModal } from '../components/AsignarAgenteModal'
 import { ReportesCarouselModal } from '../components/ReportesCarouselModal'
+import { useActualizarEstadoCasoMutation } from '../hooks/useCerrarCasoMutation'
 
 type Tab = 'activos' | 'cerrados' | 'mas_recientes'
 
@@ -30,6 +31,7 @@ export function CasosView() {
   const [casoParaReportes, setCasoParaReportes] = useState<Caso | null>(null)
 
   const { data: queryData, isLoading, isError, refetch } = useListarCasos({ limit: 100 })
+  const actualizarEstadoCaso = useActualizarEstadoCasoMutation()
 
   const casosFiltrados = useMemo(() => {
     const todos = queryData?.data ?? []
@@ -61,6 +63,10 @@ export function CasosView() {
     { key: 'cerrados', label: 'Cerrados' },
     { key: 'mas_recientes', label: 'Más recientes' },
   ]
+
+  const handleReactivar = (caso: Caso) => {
+    actualizarEstadoCaso.mutate({ id: caso.id, estado: 'investigacion_activa' })
+  }
 
   return (
     <div className="space-y-5">
@@ -161,7 +167,7 @@ export function CasosView() {
           !isError &&
           casosFiltrados.map((caso) => (
             <div key={caso.id} onClick={() => setCasoParaReportes(caso)} className="cursor-pointer">
-              <CasoCard caso={caso} onAsignar={setCasoParaAsignar} />
+              <CasoCard caso={caso} onAsignar={setCasoParaAsignar} onReactivar={handleReactivar} />
             </div>
           ))}
       </div>
