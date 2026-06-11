@@ -27,6 +27,42 @@ export function LoginView() {
 
   const mutation = useLoginMutation()
 
+  const resetRecoveryFields = () => {
+    setRecoveryEmail('')
+    setRecoveryEmailError(false)
+    setGeneratedCode(null)
+    setRecoveryCode('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setRecoveryMessage('')
+    setRecoveryError('')
+  }
+
+  const resetLoginFields = () => {
+    setEmail('')
+    setPassword('')
+    setDomainError(false)
+  }
+
+  const goToLogin = () => {
+    resetLoginFields()
+    resetRecoveryFields()
+    setStep('login')
+  }
+
+  const goToRequest = () => {
+    resetRecoveryFields()
+    setStep('request')
+  }
+
+  const goToVerify = () => {
+    setRecoveryCode('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setRecoveryError('')
+    setStep('verify')
+  }
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (!email.toLowerCase().endsWith(`@${EMAIL_DOMAIN}`)) {
@@ -48,11 +84,10 @@ export function LoginView() {
     console.log(`Código de recuperación (mock): ${code}`)
     
     setGeneratedCode(code)
-    setStep('verify')
+    goToVerify()
     setRecoveryMessage(
       `Se envió un código de recuperación al correo ${recoveryEmail}. (Mock: ${code})`
     )
-    setRecoveryError('')
   }
 
   const handleRecoverPassword = () => {
@@ -106,11 +141,7 @@ export function LoginView() {
             onEmailChange={setEmail}
             onPasswordChange={setPassword}
             onSubmit={handleSubmit}
-            onForgotPassword={() => {
-              setStep('request')
-              setRecoveryError('')
-              setRecoveryMessage('')
-            }}
+            onForgotPassword={goToRequest}
             emailDomain={EMAIL_DOMAIN}
           />
         ) : step === 'request' ? (
@@ -120,7 +151,7 @@ export function LoginView() {
             recoveryMessage={recoveryMessage}
             onEmailChange={setRecoveryEmail}
             onSendCode={handleSendRecoveryCode}
-            onBack={() => setStep('login')}
+            onBack={goToLogin}
             emailDomain={EMAIL_DOMAIN}
           />
         ) : step === 'verify' ? (
@@ -133,10 +164,10 @@ export function LoginView() {
             onNewPasswordChange={setNewPassword}
             onConfirmPasswordChange={setConfirmPassword}
             onSubmit={handleRecoverPassword}
-            onBack={() => setStep('login')}
+            onBack={goToLogin}
           />
         ) : (
-          <ForgotPasswordSuccess onFinish={() => setStep('login')} />
+          <ForgotPasswordSuccess onFinish={goToLogin} />
         )}
       </div>
     </div>
