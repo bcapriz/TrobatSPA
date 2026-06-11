@@ -48,6 +48,11 @@ export function MapaView() {
       .slice(0, 4)
   }, [casosData, searchCaso])
 
+  const casoNombres = useMemo(
+    () => Object.fromEntries((casosData?.data ?? []).map((c) => [c.id, c.desaparecido.nombre])),
+    [casosData],
+  )
+
   const reportesFiltrados = useMemo(() => {
 
     // Excluir reportes de casos cerrados
@@ -242,6 +247,7 @@ export function MapaView() {
           {selectedReporte ? (
             <ReportePanel
               reporte={selectedReporte}
+              casoNombre={casoNombres[selectedReporte.caso_id] ?? 'Caso desconocido'}
               onClose={() => setSelectedReporte(null)}
             />
           ) : (
