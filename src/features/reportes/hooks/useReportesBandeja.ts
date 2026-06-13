@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { casosService } from '../../../data/services/casosService'
 import { reportesService } from '../../../data/services/reportesService'
+import { useListarCasos } from '../../casos/hooks/useListarCasos'
 
 export function useReportesBandeja() {
   const reportesQuery = useQuery({
@@ -10,11 +10,7 @@ export function useReportesBandeja() {
     refetchInterval: 30_000,
   })
 
-  const casosQuery = useQuery({
-    queryKey: ['casos-bandeja'],
-    queryFn: () => casosService.listar({ limit: 100 }),
-    staleTime: 60_000,
-  })
+  const casosQuery = useListarCasos({ limit: 100 })
 
   const reportes = reportesQuery.data?.data ?? []
   const casos = casosQuery.data?.data ?? []

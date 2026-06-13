@@ -30,7 +30,10 @@ export function MapaView() {
   const { data: casosData } = useListarCasos({ limit: 50 })
 
   const casos = useMemo(() => {
-    const allCasos = casosData?.data ?? []
+    // Excluir reportes de casos cerrados
+    const allCasos = (casosData?.data ?? []).filter(
+      (c) => c.estado !== 'cerrado'
+    )
     
     // Filtrar por búsqueda
     const filtered = searchCaso.trim()
@@ -45,9 +48,23 @@ export function MapaView() {
       .slice(0, 4)
   }, [casosData, searchCaso])
 
+  const casoNombres = useMemo(
+    () => Object.fromEntries((casosData?.data ?? []).map((c) => [c.id, c.desaparecido.nombre])),
+    [casosData],
+  )
+
   const reportesFiltrados = useMemo(() => {
-    const todos = reportesData?.data ?? []
-    let result = todos
+
+    // Excluir reportes de casos cerrados
+    const casosActivosIds = new Set(
+      (casosData?.data ?? [])
+        .filter((c) => c.estado !== 'cerrado')
+        .map((c) => c.id)
+    )
+
+    let result = (reportesData?.data ?? []).filter(
+      (r) => casosActivosIds.has(r.caso_id)
+    )
 
     if (soloPrioridad) {
       result = result.filter((r) => r.prioridad_policial)
@@ -230,6 +247,7 @@ export function MapaView() {
           {selectedReporte ? (
             <ReportePanel
               reporte={selectedReporte}
+              casoNombre={casoNombres[selectedReporte.caso_id] ?? 'Caso desconocido'}
               onClose={() => setSelectedReporte(null)}
             />
           ) : (

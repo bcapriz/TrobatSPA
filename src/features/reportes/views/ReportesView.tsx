@@ -275,10 +275,18 @@ export function ReportesView() {
 
   const { isLoading, isError, reportes, casos, casoNombres, totales } = useReportesBandeja()
 
+  const casosAbiertosIds = useMemo(
+    () => new Set(casos
+      .filter((c) => c.estado === 'investigacion_activa' || c.estado === 'suspendido')
+      .map((c) => c.id)
+    ),
+    [casos],
+  )
+
   const reportesFiltrados = useMemo(() => {
-    let list = [...reportes].sort(
-      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-    )
+    let list = [...reportes]
+      .filter((r) => casosAbiertosIds.has(r.caso_id))
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
     if (casoIdFiltro) list = list.filter((r) => r.caso_id === casoIdFiltro)
 
@@ -292,17 +300,18 @@ export function ReportesView() {
       default:
         return list
     }
-  }, [reportes, activeTab, casoIdFiltro])
+  }, [reportes, casosAbiertosIds, activeTab, casoIdFiltro])
 
   const selectedReporte = selectedId
     ? reportesFiltrados.find((r) => r.id === selectedId) ?? null
     : null
 
+  const visibleReportes = reportes.filter((r) => casosAbiertosIds.has(r.caso_id))
   const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: 'todos', label: 'Todos', count: totales.todos },
-    { key: 'pendientes', label: 'Pendientes', count: totales.pendientes },
-    { key: 'prioritarios', label: 'Prioritarios', count: totales.prioritarios },
-    { key: 'validados', label: 'Validados', count: totales.validados },
+    { key: 'todos', label: 'Todos', count: visibleReportes.length },
+    { key: 'pendientes', label: 'Pendientes', count: visibleReportes.filter((r) => !r.validado).length },
+    { key: 'prioritarios', label: 'Prioritarios', count: visibleReportes.filter((r) => r.prioridad_policial).length },
+    { key: 'validados', label: 'Validados', count: visibleReportes.filter((r) => r.validado).length },
   ]
 
   const handleRowClick = (id: string) => {

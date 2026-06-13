@@ -5,6 +5,7 @@ import { useReverseGeocode } from '../../../shared/hooks/useReverseGeocode'
 
 interface Props {
   reporte: Reporte
+  casoNombre: string
   onClose: () => void
 }
 
@@ -18,7 +19,7 @@ function formatDateTime(iso: string): string {
   })
 }
 
-export function ReportePanel({ reporte, onClose }: Props) {
+export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
   const mutation = useValidarReporteMutation()
 
   const [lng, lat] = reporte.location.coordinates
@@ -62,6 +63,15 @@ export function ReportePanel({ reporte, onClose }: Props) {
         )}
 
         <div className="p-4 space-y-4">
+          <div>
+            <p className="text-text-secondary text-xs uppercase tracking-wide mb-1 font-medium">
+              Desaparecido
+            </p>
+            <p className="text-text-primary text-sm leading-relaxed">
+              {casoNombre || 'Caso desconocido'}
+            </p>
+          </div>
+
           <div>
             <p className="text-text-secondary text-xs uppercase tracking-wide mb-1 font-medium">
               Descripción

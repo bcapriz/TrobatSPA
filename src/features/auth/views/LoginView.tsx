@@ -1,16 +1,67 @@
 import { type FormEvent, useState } from 'react'
 import trobatLogo from '../../../assets/trobatLogo.png'
 import { useLoginMutation } from '../hooks/useLoginMutation'
+import { LoginForm } from '../components/LoginForm'
+import { ForgotPasswordRequest } from '../components/ForgotPasswordRequest'
+import { ForgotPasswordVerify } from '../components/ForgotPasswordVerify'
+import { ForgotPasswordSuccess } from '../components/ForgotPasswordSuccess'
 
 const EMAIL_DOMAIN =
   (import.meta.env.VITE_EMAIL_DOMAIN as string | undefined) ?? 'policia.gob.ar'
+
+type AuthStep = 'login' | 'request' | 'verify' | 'success'
 
 export function LoginView() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [domainError, setDomainError] = useState(false)
+  const [step, setStep] = useState<AuthStep>('login')
+  const [recoveryEmail, setRecoveryEmail] = useState('')
+  const [recoveryEmailError, setRecoveryEmailError] = useState(false)
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null)
+  const [recoveryCode, setRecoveryCode] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [recoveryMessage, setRecoveryMessage] = useState('')
+  const [recoveryError, setRecoveryError] = useState('')
 
   const mutation = useLoginMutation()
+
+  const resetRecoveryFields = () => {
+    setRecoveryEmail('')
+    setRecoveryEmailError(false)
+    setGeneratedCode(null)
+    setRecoveryCode('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setRecoveryMessage('')
+    setRecoveryError('')
+  }
+
+  const resetLoginFields = () => {
+    setEmail('')
+    setPassword('')
+    setDomainError(false)
+  }
+
+  const goToLogin = () => {
+    resetLoginFields()
+    resetRecoveryFields()
+    setStep('login')
+  }
+
+  const goToRequest = () => {
+    resetRecoveryFields()
+    setStep('request')
+  }
+
+  const goToVerify = () => {
+    setRecoveryCode('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setRecoveryError('')
+    setStep('verify')
+  }
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -22,8 +73,50 @@ export function LoginView() {
     mutation.mutate({ email_institucional: email, password })
   }
 
-  const inputClass =
-    'w-full bg-bg-hover border border-border-soft rounded-lg px-3 py-2.5 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-base transition-colors text-sm'
+  const handleSendRecoveryCode = () => {
+    if (!recoveryEmail.toLowerCase().endsWith(`@${EMAIL_DOMAIN}`)) {
+      setRecoveryEmailError(true)
+      return
+    }
+
+    setRecoveryEmailError(false)
+    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    console.log(`Código de recuperación (mock): ${code}`)
+    
+    setGeneratedCode(code)
+    goToVerify()
+    setRecoveryMessage(
+      `Se envió un código de recuperación al correo ${recoveryEmail}. (Mock: ${code})`
+    )
+  }
+
+  const handleRecoverPassword = () => {
+    if (!generatedCode || recoveryCode !== generatedCode) {
+      setRecoveryError('El código ingresado no coincide.')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setRecoveryError('La contraseña debe tener al menos 6 caracteres.')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setRecoveryError('Las contraseñas no coinciden.')
+      return
+    }
+
+    setRecoveryError('')
+    setRecoveryMessage(
+      'Contraseña actualizada correctamente. Ahora podés iniciar sesión con la nueva contraseña.'
+    )
+    setStep('success')
+    setEmail(recoveryEmail)
+    setPassword(newPassword)
+    setGeneratedCode(null)
+    setRecoveryCode('')
+    setConfirmPassword('')
+  }
 
   return (
     <div className="min-h-screen bg-bg-app flex items-center justify-center px-4">
@@ -38,56 +131,44 @@ export function LoginView() {
           <p className="text-text-secondary text-sm mt-1">Panel de Control Policial</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1.5 uppercase tracking-wide">
-              Email institucional
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                setDomainError(false)
-              }}
-              placeholder={`agente@${EMAIL_DOMAIN}`}
-              required
-              className={inputClass}
-            />
-            {domainError && (
-              <p className="text-priority-high text-xs mt-1.5">
-                El email debe pertenecer al dominio @{EMAIL_DOMAIN}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1.5 uppercase tracking-wide">
-              Contraseña
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className={inputClass}
-            />
-          </div>
-
-          {mutation.isError && (
-            <p className="text-priority-high text-sm bg-priority-high/10 border border-priority-high/20 rounded-lg px-3 py-2">
-              Credenciales inválidas. Intente nuevamente.
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="w-full bg-brand-base hover:bg-brand-dark text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2 text-sm"
-          >
-            {mutation.isPending ? 'Verificando...' : 'Iniciar sesión'}
-          </button>
-        </form>
+        {step === 'login' ? (
+          <LoginForm
+            email={email}
+            password={password}
+            domainError={domainError}
+            isPending={mutation.isPending}
+            isError={mutation.isError}
+            onEmailChange={setEmail}
+            onPasswordChange={setPassword}
+            onSubmit={handleSubmit}
+            onForgotPassword={goToRequest}
+            emailDomain={EMAIL_DOMAIN}
+          />
+        ) : step === 'request' ? (
+          <ForgotPasswordRequest
+            recoveryEmail={recoveryEmail}
+            recoveryEmailError={recoveryEmailError}
+            recoveryMessage={recoveryMessage}
+            onEmailChange={setRecoveryEmail}
+            onSendCode={handleSendRecoveryCode}
+            onBack={goToLogin}
+            emailDomain={EMAIL_DOMAIN}
+          />
+        ) : step === 'verify' ? (
+          <ForgotPasswordVerify
+            recoveryCode={recoveryCode}
+            newPassword={newPassword}
+            confirmPassword={confirmPassword}
+            recoveryError={recoveryError}
+            onRecoveryCodeChange={setRecoveryCode}
+            onNewPasswordChange={setNewPassword}
+            onConfirmPasswordChange={setConfirmPassword}
+            onSubmit={handleRecoverPassword}
+            onBack={goToLogin}
+          />
+        ) : (
+          <ForgotPasswordSuccess onFinish={goToLogin} />
+        )}
       </div>
     </div>
   )
