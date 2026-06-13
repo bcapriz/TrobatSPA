@@ -1,14 +1,27 @@
-import { type FormEvent, useState } from 'react'
-import { X } from 'lucide-react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
+import { X, MapPin } from 'lucide-react'
+import { Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 import type { Ubicacion } from '../../../domain/models'
 import { useAuthStore } from '../../../core/stores/authStore'
 import { useCrearCasoMutation } from '../hooks/useCrearCasoMutation'
 
+const MAPS_MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || 'DEMO_MAP_ID'
+
+function MapController({ center }: { center: { lat: number; lng: number } }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!map) return
+    map.panTo(center)
+    map.setZoom(15)
+  }, [map, center.lat, center.lng])
+  return null
+}
+
 interface FormData {
   nombre: string
   descripcion: string
-  latitud: string
-  longitud: string
+  edad: string
+  fecha_ultima_vez_visto: string
   repNombre: string
   repEmail: string
   repTelefono: string
@@ -17,8 +30,8 @@ interface FormData {
 const INITIAL: FormData = {
   nombre: '',
   descripcion: '',
-  latitud: '',
-  longitud: '',
+  edad: '',
+  fecha_ultima_vez_visto: '',
   repNombre: '',
   repEmail: '',
   repTelefono: '',
@@ -35,8 +48,32 @@ interface Props {
 
 export function CrearCasoModal({ onClose }: Props) {
   const [form, setForm] = useState<FormData>(INITIAL)
+  const [coordenadas, setCoordenadas] = useState<{ lat: number; lng: number } | null>(null)
+  const [coordError, setCoordError] = useState(false)
+  const addressInputRef = useRef<HTMLInputElement>(null)
+  const placesLib = useMapsLibrary('places')
   const oficialId = useAuthStore((s) => s.usuario?.id ?? '')
   const mutation = useCrearCasoMutation()
+
+  useEffect(() => {
+    if (!placesLib || !addressInputRef.current) return
+    const autocomplete = new placesLib.Autocomplete(addressInputRef.current, {
+      componentRestrictions: { country: 'ar' },
+      fields: ['geometry', 'formatted_address'],
+      types: ['geocode', 'establishment'],
+    })
+    const listener = autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace()
+      if (place.geometry?.location) {
+        setCoordenadas({
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+        })
+        setCoordError(false)
+      }
+    })
+    return () => google.maps.event.removeListener(listener)
+  }, [placesLib])
 
   const set =
     (field: keyof FormData) =>
@@ -45,13 +82,16 @@ export function CrearCasoModal({ onClose }: Props) {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
+    if (!coordenadas) {
+      setCoordError(true)
+      addressInputRef.current?.focus()
+      return
+    }
 
-    const lat = parseFloat(form.latitud)
-    const lng = parseFloat(form.longitud)
-    if (isNaN(lat) || lat < -90 || lat > 90) return
-    if (isNaN(lng) || lng < -180 || lng > 180) return
-
-    const ultima_ubicacion_oficial: Ubicacion = { type: 'Point', coordinates: [lng, lat] }
+    const ultima_ubicacion_oficial: Ubicacion = {
+      type: 'Point',
+      coordinates: [coordenadas.lng, coordenadas.lat],
+    }
 
     mutation.mutate(
       {
@@ -60,6 +100,9 @@ export function CrearCasoModal({ onClose }: Props) {
         desaparecido: {
           nombre: form.nombre.trim(),
           descripcion: form.descripcion.trim(),
+          edad: parseInt(form.edad) || 0,
+          fecha_ultima_vez_visto: form.fecha_ultima_vez_visto,
+          descripcion_ubicacion: addressInputRef.current?.value.trim() ?? '',
           ultima_ubicacion_oficial,
         },
         representante_externo: {
@@ -116,33 +159,94 @@ export function CrearCasoModal({ onClose }: Props) {
                 />
               </div>
               <div>
-                <label className={labelClass}>Latitud del punto cero</label>
+                <label className={labelClass}>Edad</label>
                 <input
                   type="number"
-                  value={form.latitud}
-                  onChange={set('latitud')}
+                  value={form.edad}
+                  onChange={set('edad')}
                   required
-                  step="any"
-                  min={-90}
-                  max={90}
-                  placeholder="-34.6037"
+                  min={0}
+                  max={120}
+                  placeholder="Ej: 34"
                   className={inputClass}
                 />
               </div>
               <div>
-                <label className={labelClass}>Longitud del punto cero</label>
+                <label className={labelClass}>Última vez visto (fecha)</label>
                 <input
-                  type="number"
-                  value={form.longitud}
-                  onChange={set('longitud')}
+                  type="date"
+                  value={form.fecha_ultima_vez_visto}
+                  onChange={set('fecha_ultima_vez_visto')}
                   required
-                  step="any"
-                  min={-180}
-                  max={180}
-                  placeholder="-58.3816"
                   className={inputClass}
                 />
               </div>
+              <div className="col-span-2">
+                <label className={labelClass}>Última ubicación conocida</label>
+                <div className="relative">
+                  <input
+                    ref={addressInputRef}
+                    type="text"
+                    placeholder="Buscar dirección en Google Maps..."
+                    onChange={() => {
+                      setCoordenadas(null)
+                      setCoordError(false)
+                    }}
+                    className={`${inputClass} pr-8 ${coordError ? 'border-priority-high focus:border-priority-high' : ''}`}
+                  />
+                  <MapPin
+                    size={14}
+                    className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${
+                      coordenadas ? 'text-brand-base' : 'text-text-muted'
+                    }`}
+                  />
+                </div>
+                {coordenadas && (
+                  <p className="mt-1.5 text-xs text-brand-base font-mono">
+                    {coordenadas.lat.toFixed(5)}, {coordenadas.lng.toFixed(5)}
+                  </p>
+                )}
+                {coordError && (
+                  <p className="mt-1.5 text-xs text-priority-high">
+                    Seleccioná una dirección del desplegable para confirmar la ubicación.
+                  </p>
+                )}
+              </div>
+
+              {coordenadas && (
+                <div className="col-span-2">
+                  <div className="h-52 rounded-lg overflow-hidden border border-border-soft">
+                    <Map
+                      defaultCenter={coordenadas}
+                      defaultZoom={15}
+                      mapId={MAPS_MAP_ID}
+                      gestureHandling="cooperative"
+                      disableDefaultUI
+                      clickableIcons={false}
+                    >
+                      <MapController center={coordenadas} />
+                      <AdvancedMarker
+                        position={coordenadas}
+                        draggable
+                        onDragEnd={(e) => {
+                          if (!e.latLng) return
+                          const newCoords = { lat: e.latLng.lat(), lng: e.latLng.lng() }
+                          setCoordenadas(newCoords)
+                          const geocoder = new google.maps.Geocoder()
+                          geocoder.geocode({ location: newCoords }, (results, status) => {
+                            if (status === 'OK' && results?.[0] && addressInputRef.current) {
+                              addressInputRef.current.value = results[0].formatted_address
+                            }
+                          })
+                        }}
+                      />
+                    </Map>
+                  </div>
+                  <p className="mt-1.5 text-xs text-text-muted">
+                    Arrastrá el marcador para ajustar la posición exacta.
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 

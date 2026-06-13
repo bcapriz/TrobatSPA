@@ -5,6 +5,9 @@ export type EstadoCaso = 'investigacion_activa' | 'resuelto' | 'cerrado' | 'susp
 export interface DesaparecidoInfo {
   nombre: string
   descripcion: string
+  edad: number
+  fecha_ultima_vez_visto: string
+  descripcion_ubicacion: string
   ultima_ubicacion_oficial: Ubicacion
 }
 

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { APIProvider } from '@vis.gl/react-google-maps'
 import { LoginView } from './features/auth/views/LoginView'
 import { MainLayout } from './shared/layouts/MainLayout'
 import { ProtectedRoute } from './shared/components/ProtectedRoute'
@@ -11,6 +12,8 @@ import { AgentesView } from './features/agentes/views/AgentesView'
 import { NotificacionesView } from './features/notificaciones/views/NotificacionesView'
 import { PerfilView } from './features/perfil/views/PerfilView'
 
+const MAPS_API_KEY = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ?? ''
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 1000 * 60, retry: 1 },
@@ -19,26 +22,28 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginView />} />
-          <Route element={<ProtectedRoute />}>
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<DashboardView />} />
-              <Route path="/mapa" element={<MapaView />} />
-              <Route path="/casos" element={<CasosView />} />
-              <Route path="/reportes" element={<ReportesView />} />
-              <Route path="/agentes" element={<AgentesView />} />
-              <Route path="/notificaciones" element={<NotificacionesView />} />
-              <Route path="/perfil" element={<PerfilView />} />
+    <APIProvider apiKey={MAPS_API_KEY} libraries={['places']}>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginView />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<DashboardView />} />
+                <Route path="/mapa" element={<MapaView />} />
+                <Route path="/casos" element={<CasosView />} />
+                <Route path="/reportes" element={<ReportesView />} />
+                <Route path="/agentes" element={<AgentesView />} />
+                <Route path="/notificaciones" element={<NotificacionesView />} />
+                <Route path="/perfil" element={<PerfilView />} />
+              </Route>
             </Route>
-          </Route>
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </APIProvider>
   )
 }
 
