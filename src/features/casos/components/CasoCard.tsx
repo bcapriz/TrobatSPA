@@ -74,7 +74,7 @@ function EstadoMenu({ caso }: { caso: Caso }) {
       {open && (
         <>
           {/* backdrop to close on outside click */}
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpen(false) }} />
           <div className="absolute right-0 top-full mt-1.5 w-44 bg-bg-panel border border-border-soft rounded-xl shadow-xl z-20 py-1 overflow-hidden">
             {opciones.map(({ estado, label, danger }) => (
               <button
@@ -155,7 +155,7 @@ export function CasoCard({ caso, onAsignar }: CasoCardProps) {
 
         {estado === 'investigacion_activa' && (
           <button
-            onClick={() => onAsignar(caso)}
+            onClick={(e) => { e.stopPropagation(); onAsignar(caso) }}
             className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary border border-border-soft hover:border-border-hard px-2.5 py-1.5 rounded-lg transition-colors"
           >
             <UserPlus size={13} />

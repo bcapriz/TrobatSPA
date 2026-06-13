@@ -5,8 +5,9 @@ import { useListarCasos } from '../hooks/useListarCasos'
 import { CasoCard } from '../components/CasoCard'
 import { CrearCasoModal } from '../components/CrearCasoModal'
 import { AsignarAgenteModal } from '../components/AsignarAgenteModal'
+import { ReportesCarouselModal } from '../components/ReportesCarouselModal'
 
-type Tab = 'activos' | 'cerrados'
+type Tab = 'activos' | 'cerrados' | 'mas_recientes'
 
 function SkeletonCard() {
   return (
@@ -26,23 +27,28 @@ export function CasosView() {
   const [busqueda, setBusqueda] = useState('')
   const [mostrarCrear, setMostrarCrear] = useState(false)
   const [casoParaAsignar, setCasoParaAsignar] = useState<Caso | null>(null)
+  const [casoParaReportes, setCasoParaReportes] = useState<Caso | null>(null)
 
   const { data: queryData, isLoading, isError, refetch } = useListarCasos({ limit: 100 })
 
   const casosFiltrados = useMemo(() => {
     const todos = queryData?.data ?? []
-    return todos.filter((c) => {
-      const matchTab =
-        tab === 'activos'
-          ? c.estado === 'investigacion_activa' || c.estado === 'suspendido'
-          : c.estado === 'resuelto' || c.estado === 'cerrado'
+    let filtered = todos
 
-      const matchBusqueda =
+    if (tab === 'activos') {
+      filtered = filtered.filter((c) => c.estado === 'investigacion_activa' || c.estado === 'suspendido')
+    } else if (tab === 'cerrados') {
+      filtered = filtered.filter((c) => c.estado === 'resuelto' || c.estado === 'cerrado')
+    } else if (tab === 'mas_recientes') {
+      filtered = filtered.sort((a, b) => new Date(b.fecha_creacion).getTime() - new Date(a.fecha_creacion).getTime())
+    }
+
+    // Aplicar búsqueda
+    return filtered.filter(
+      (c) =>
         !busqueda.trim() ||
         c.desaparecido.nombre.toLowerCase().includes(busqueda.toLowerCase())
-
-      return matchTab && matchBusqueda
-    })
+    )
   }, [queryData, tab, busqueda])
 
   const totalActivos = useMemo(
@@ -51,8 +57,9 @@ export function CasosView() {
   )
 
   const TAB_CONFIG: { key: Tab; label: string }[] = [
-    { key: 'activos', label: 'Casos activos' },
+    { key: 'activos', label: 'Activos' },
     { key: 'cerrados', label: 'Cerrados' },
+    { key: 'mas_recientes', label: 'Más recientes' },
   ]
 
   return (
@@ -153,7 +160,9 @@ export function CasosView() {
         {!isLoading &&
           !isError &&
           casosFiltrados.map((caso) => (
-            <CasoCard key={caso.id} caso={caso} onAsignar={setCasoParaAsignar} />
+            <div key={caso.id} onClick={() => setCasoParaReportes(caso)} className="cursor-pointer">
+              <CasoCard caso={caso} onAsignar={setCasoParaAsignar} />
+            </div>
           ))}
       </div>
 
@@ -161,6 +170,11 @@ export function CasosView() {
       {casoParaAsignar && (
         <AsignarAgenteModal caso={casoParaAsignar} onClose={() => setCasoParaAsignar(null)} />
       )}
+      <ReportesCarouselModal
+        caso={casoParaReportes}
+        isOpen={!!casoParaReportes}
+        onClose={() => setCasoParaReportes(null)}
+      />
     </div>
   )
 }

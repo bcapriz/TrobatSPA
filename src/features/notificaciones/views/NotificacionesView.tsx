@@ -1,6 +1,8 @@
-import { Flag, ShieldCheck, Bell, FolderOpen, Loader2, AlertCircle } from 'lucide-react'
+import { useState } from 'react'
+import { Flag, ShieldCheck, Bell, FolderOpen, Loader2, AlertCircle, Plus } from 'lucide-react'
 import type { TipoNotif, FeedItem } from '../hooks/useFeedNotificaciones'
 import { useFeedNotificaciones } from '../hooks/useFeedNotificaciones'
+import { CrearNotificacionModal } from '../components/CrearNotificacionModal'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -70,6 +72,7 @@ function NotifItem({ item }: { item: FeedItem }) {
 // ─── main view ────────────────────────────────────────────────────────────────
 
 export function NotificacionesView() {
+  const [isOpenModal, setIsOpenModal] = useState(false)
   const { isLoading, isError, urgentes, groupByDay } = useFeedNotificaciones()
   const groups = groupByDay()
 
@@ -85,23 +88,31 @@ export function NotificacionesView() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-text-primary font-bold text-lg">Notificaciones</h1>
-          <p className="text-text-muted text-xs mt-0.5">Feed de actividad del sistema</p>
+    <>
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-text-primary font-bold text-lg">Notificaciones</h1>
+            <p className="text-text-muted text-xs mt-0.5">Feed de actividad del sistema</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsOpenModal(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-base text-white hover:bg-brand-base/90 transition-colors text-xs font-medium"
+            >
+              <Plus size={14} />
+              Nueva notificación
+            </button>
+            {isLoading && <Loader2 size={15} className="animate-spin text-text-muted" />}
+            {!isLoading && urgentes > 0 && (
+              <span className="flex items-center gap-1.5 text-xs font-bold text-priority-high bg-priority-high/15 border border-priority-high/25 px-3 py-1.5 rounded-full">
+                <Flag size={11} />
+                {urgentes} alerta{urgentes !== 1 ? 's' : ''} activa{urgentes !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          {isLoading && <Loader2 size={15} className="animate-spin text-text-muted" />}
-          {!isLoading && urgentes > 0 && (
-            <span className="flex items-center gap-1.5 text-xs font-bold text-priority-high bg-priority-high/15 border border-priority-high/25 px-3 py-1.5 rounded-full">
-              <Flag size={11} />
-              {urgentes} alerta{urgentes !== 1 ? 's' : ''} activa{urgentes !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-      </div>
 
       {/* Leyenda */}
       <div className="flex flex-wrap gap-3">
@@ -167,6 +178,9 @@ export function NotificacionesView() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+
+      <CrearNotificacionModal isOpen={isOpenModal} onClose={() => setIsOpenModal(false)} />
+    </>
   )
 }
