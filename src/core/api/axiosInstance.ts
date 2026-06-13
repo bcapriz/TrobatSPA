@@ -21,7 +21,12 @@ apiClient.interceptors.response.use(
   (error: unknown) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       localStorage.removeItem('trobat_token')
-      window.location.replace('/login')
+      
+      // Solo redirigimos si NO estamos ya en la pantalla de login
+      if (window.location.pathname !== '/login') {
+        window.location.replace('/login')
+      }
+      
     }
     return Promise.reject(error)
   },
