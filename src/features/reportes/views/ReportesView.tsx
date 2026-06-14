@@ -14,6 +14,7 @@ import {
 import type { Reporte } from '../../../domain/models'
 import { useReportesBandeja } from '../hooks/useReportesBandeja'
 import { useValidarReporteMutation } from '../../mapa_investigacion/hooks/useValidarReporteMutation'
+import { useAsignarPrioridadMutation } from '../../casos/hooks/useAsignarPrioridadMutation'
 import { useReverseGeocode } from '../../../shared/hooks/useReverseGeocode'
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -51,9 +52,38 @@ interface DetailPanelProps {
 }
 
 function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
-  const mutation = useValidarReporteMutation()
+  const validarMutation = useValidarReporteMutation()
+  const prioridadMutation = useAsignarPrioridadMutation()
   const [lng, lat] = reporte.location.coordinates
   const { data: direccion, isLoading: geocodingLoading } = useReverseGeocode(lat, lng)
+
+  const handleQuitarValidacion = () => {
+    if (!window.confirm('¿Confirmás quitar la validación de este reporte?')) return
+
+    validarMutation.mutate(
+      { id: reporte.id, validado: false },
+      {
+        onSuccess: () => {
+          if (reporte.prioridad_policial) {
+            prioridadMutation.mutate({ id: reporte.id, payload: { prioridad_policial: false } })
+          }
+        },
+      },
+    )
+  }
+
+  const handleQuitarPrioridad = () => {
+    if (!window.confirm('¿Confirmás quitar la prioridad alta de este reporte?')) return
+    prioridadMutation.mutate({ id: reporte.id, payload: { prioridad_policial: false } })
+  }
+
+  const handleAsignarPrioridad = () => {
+    if (!window.confirm('¿Confirmás asignar prioridad alta y validar automáticamente este reporte?')) return
+    prioridadMutation.mutate({
+      id: reporte.id,
+      payload: { prioridad_policial: true, validado: true },
+    })
+  }
 
   return (
     <div className="flex flex-col h-full border-l border-border-soft bg-bg-panel">

@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { reportesService } from '../../../data/services/reportesService'
-import { REPORTES_QUERY_KEY } from './useObtenerReportes'
+import { REPORTES_QUERY_KEY } from '../../mapa_investigacion/hooks/useObtenerReportes'
 
-export function useValidarReporteMutation() {
+export function useAsignarPrioridadMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, validado }: { id: string; validado: boolean }) =>
-      reportesService.validar(id, { validado }),
+    mutationFn: ({ id, payload }: { id: string; payload: { prioridad_policial: boolean; validado?: boolean } }) =>
+      reportesService.priorizar(id, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [REPORTES_QUERY_KEY], exact: false })
       void queryClient.invalidateQueries({ queryKey: ['reportes-bandeja'] })
