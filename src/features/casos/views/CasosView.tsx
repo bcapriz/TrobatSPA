@@ -6,6 +6,7 @@ import { CasoCard } from '../components/CasoCard'
 import { CrearCasoModal } from '../components/CrearCasoModal'
 import { AsignarAgenteModal } from '../components/AsignarAgenteModal'
 import { ReportesCarouselModal } from '../components/ReportesCarouselModal'
+import { EditarCasoModal } from '../components/EditarCasoModal'
 import { useActualizarEstadoCasoMutation } from '../hooks/useCerrarCasoMutation'
 
 type Tab = 'activos' | 'cerrados' | 'mas_recientes'
@@ -29,6 +30,7 @@ export function CasosView() {
   const [mostrarCrear, setMostrarCrear] = useState(false)
   const [casoParaAsignar, setCasoParaAsignar] = useState<Caso | null>(null)
   const [casoParaReportes, setCasoParaReportes] = useState<Caso | null>(null)
+  const [casoParaEditar, setCasoParaEditar] = useState<Caso | null>(null)
 
   const { data: queryData, isLoading, isError, refetch } = useListarCasos({ limit: 100 })
   const actualizarEstadoCaso = useActualizarEstadoCasoMutation()
@@ -167,12 +169,20 @@ export function CasosView() {
           !isError &&
           casosFiltrados.map((caso) => (
             <div key={caso.id} onClick={() => setCasoParaReportes(caso)} className="cursor-pointer">
-              <CasoCard caso={caso} onAsignar={setCasoParaAsignar} onReactivar={handleReactivar} />
+              <CasoCard
+                caso={caso}
+                onAsignar={setCasoParaAsignar}
+                onReactivar={handleReactivar}
+                onEditar={setCasoParaEditar}
+              />
             </div>
           ))}
       </div>
 
       {mostrarCrear && <CrearCasoModal onClose={() => setMostrarCrear(false)} />}
+      {casoParaEditar && (
+        <EditarCasoModal caso={casoParaEditar} onClose={() => setCasoParaEditar(null)} />
+      )}
       {casoParaAsignar && (
         <AsignarAgenteModal caso={casoParaAsignar} onClose={() => setCasoParaAsignar(null)} />
       )}

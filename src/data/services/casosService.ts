@@ -18,6 +18,22 @@ export interface ActualizarEstadoPayload {
   estado: EstadoCaso
 }
 
+export interface EditarCasoPayload {
+  desaparecido: {
+    nombre: string
+    descripcion: string
+    edad: number
+    fecha_ultima_vez_visto: string
+    descripcion_ubicacion: string
+    ultima_ubicacion_oficial: import('../../domain/models').Ubicacion
+  }
+  representante_externo: {
+    nombre: string
+    email: string
+    telefono: string
+  }
+}
+
 export const casosService = {
   listar: (filtros: ListarCasosFiltros = {}) =>
     apiClient.get<ListarCasosResponse>('/casos', { params: filtros }).then((r) => r.data),
@@ -32,6 +48,9 @@ export const casosService = {
     apiClient
       .patch<{ mensaje: string }>(`/casos/${id}/estado`, { estado })
       .then((r) => r.data),
+
+  editar: (id: string, payload: EditarCasoPayload) =>
+    apiClient.patch<{ mensaje: string }>(`/casos/${id}`, payload).then((r) => r.data),
 
   asignarAgente: (casoId: string, agenteId: string) =>
     apiClient
