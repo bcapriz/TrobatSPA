@@ -9,9 +9,10 @@ export function useValidarReporteMutation() {
     mutationFn: ({ id, validado }: { id: string; validado: boolean }) =>
       reportesService.validar(id, { validado }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [REPORTES_QUERY_KEY] })
+      void queryClient.invalidateQueries({ queryKey: [REPORTES_QUERY_KEY], exact: false })
       void queryClient.invalidateQueries({ queryKey: ['reportes-bandeja'] })
       void queryClient.invalidateQueries({ queryKey: ['dashboard-reportes'] })
+      void queryClient.invalidateQueries({ queryKey: ['reportes-caso'], exact: false })
     },
   })
 }

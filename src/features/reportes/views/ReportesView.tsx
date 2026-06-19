@@ -14,6 +14,7 @@ import {
 import type { Reporte } from '../../../domain/models'
 import { useReportesBandeja } from '../hooks/useReportesBandeja'
 import { useValidarReporteMutation } from '../../mapa_investigacion/hooks/useValidarReporteMutation'
+import { useAsignarPrioridadMutation } from '../../casos/hooks/useAsignarPrioridadMutation'
 import { useReverseGeocode } from '../../../shared/hooks/useReverseGeocode'
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -50,10 +51,47 @@ interface DetailPanelProps {
   onClose: () => void
 }
 
+type ConfirmAction = 'asignarPrioridad' | 'quitarPrioridad' | 'quitarValidacion' | null
+
 function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
-  const mutation = useValidarReporteMutation()
+  const validarMutation = useValidarReporteMutation()
+  const prioridadMutation = useAsignarPrioridadMutation()
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
   const [lng, lat] = reporte.location.coordinates
   const { data: direccion, isLoading: geocodingLoading } = useReverseGeocode(lat, lng)
+
+  const isPending = validarMutation.isPending || prioridadMutation.isPending
+
+  const handleConfirm = () => {
+    if (!confirmAction) return
+    setConfirmAction(null)
+
+    if (confirmAction === 'asignarPrioridad') {
+      prioridadMutation.mutate({
+        id: reporte.id,
+        payload: { prioridad_policial: true, validado: true },
+      })
+    } else if (confirmAction === 'quitarPrioridad') {
+      prioridadMutation.mutate({ id: reporte.id, payload: { prioridad_policial: false } })
+    } else if (confirmAction === 'quitarValidacion') {
+      validarMutation.mutate(
+        { id: reporte.id, validado: false },
+        {
+          onSuccess: () => {
+            if (reporte.prioridad_policial) {
+              prioridadMutation.mutate({ id: reporte.id, payload: { prioridad_policial: false } })
+            }
+          },
+        },
+      )
+    }
+  }
+
+  const confirmLabels: Record<NonNullable<ConfirmAction>, string> = {
+    asignarPrioridad: 'Asignar prioridad alta y validar automáticamente este reporte',
+    quitarPrioridad: 'Quitar la prioridad alta de este reporte',
+    quitarValidacion: 'Quitar la validación' + (reporte.prioridad_policial ? ' y la prioridad alta' : '') + ' de este reporte',
+  }
 
   return (
     <div className="flex flex-col h-full border-l border-border-soft bg-bg-panel">
@@ -168,26 +206,75 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
       </div>
 
       {/* Action */}
-      <div className="p-4 border-t border-border-soft flex-shrink-0">
-        {reporte.validado ? (
+      <div className="p-4 border-t border-border-soft flex-shrink-0 space-y-2">
+
+        {/* Confirmación inline */}
+        {confirmAction && (
+          <div className="bg-bg-hover border border-border-soft rounded-lg p-3 space-y-2">
+            <p className="text-text-secondary text-xs leading-snug">
+              {confirmLabels[confirmAction]}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleConfirm}
+                disabled={isPending}
+                className="flex-1 py-1.5 text-xs font-semibold bg-priority-high hover:bg-priority-high/80 text-white rounded-md transition-colors disabled:opacity-50"
+              >
+                {isPending ? 'Procesando…' : 'Confirmar'}
+              </button>
+              <button
+                onClick={() => setConfirmAction(null)}
+                disabled={isPending}
+                className="flex-1 py-1.5 text-xs font-medium border border-border-soft text-text-secondary hover:bg-bg-hover rounded-md transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Botón quitar / asignar prioridad */}
+        {!confirmAction && (reporte.prioridad_policial ? (
           <button
-            onClick={() => mutation.mutate({ id: reporte.id, validado: false })}
-            disabled={mutation.isPending}
-            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium border border-border-soft text-text-secondary hover:text-priority-high hover:border-priority-high/40 rounded-lg transition-colors disabled:opacity-50"
+            onClick={() => setConfirmAction('quitarPrioridad')}
+            disabled={isPending}
+            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium border border-priority-high/40 text-priority-high hover:bg-priority-high/10 rounded-lg transition-colors disabled:opacity-50"
           >
-            <ShieldOff size={14} />
-            {mutation.isPending ? 'Procesando…' : 'Quitar validación'}
+            <Flag size={14} />
+            Quitar prioridad alta
           </button>
         ) : (
           <button
-            onClick={() => mutation.mutate({ id: reporte.id, validado: true })}
-            disabled={mutation.isPending}
+            onClick={() => setConfirmAction('asignarPrioridad')}
+            disabled={isPending}
+            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium border border-border-soft text-text-secondary hover:text-priority-high hover:border-priority-high/40 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <Flag size={14} />
+            Asignar prioridad alta
+          </button>
+        ))}
+
+        {/* Botón validar / quitar validación */}
+        {!confirmAction && (reporte.validado ? (
+          <button
+            onClick={() => setConfirmAction('quitarValidacion')}
+            disabled={isPending}
+            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium border border-border-soft text-text-secondary hover:text-priority-high hover:border-priority-high/40 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <ShieldOff size={14} />
+            Quitar validación
+          </button>
+        ) : (
+          <button
+            onClick={() => validarMutation.mutate({ id: reporte.id, validado: true })}
+            disabled={isPending}
             className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-priority-low hover:bg-priority-low/80 text-white rounded-lg transition-colors disabled:opacity-50"
           >
             <ShieldCheck size={14} />
-            {mutation.isPending ? 'Procesando…' : 'Validar reporte'}
+            {validarMutation.isPending ? 'Procesando…' : 'Validar reporte'}
           </button>
-        )}
+        ))}
+
       </div>
     </div>
   )
@@ -302,11 +389,13 @@ export function ReportesView() {
     }
   }, [reportes, casosAbiertosIds, activeTab, casoIdFiltro])
 
+  // Buscar en todos los reportes visibles para que el panel no desaparezca
+  // cuando el reporte cambia de estado y sale del filtro activo
+  const visibleReportes = reportes.filter((r) => casosAbiertosIds.has(r.caso_id))
   const selectedReporte = selectedId
-    ? reportesFiltrados.find((r) => r.id === selectedId) ?? null
+    ? visibleReportes.find((r) => r.id === selectedId) ?? null
     : null
 
-  const visibleReportes = reportes.filter((r) => casosAbiertosIds.has(r.caso_id))
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: 'todos', label: 'Todos', count: visibleReportes.length },
     { key: 'pendientes', label: 'Pendientes', count: visibleReportes.filter((r) => !r.validado).length },

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { FileText, Users, UserPlus, ChevronDown } from 'lucide-react'
+import { FileText, Users, UserPlus, ChevronDown, Pencil } from 'lucide-react'
 import type { Caso, EstadoCaso } from '../../../domain/models'
 import { useActualizarEstadoCasoMutation } from '../hooks/useCerrarCasoMutation'
 
@@ -102,9 +102,10 @@ interface CasoCardProps {
   caso: Caso
   onAsignar: (caso: Caso) => void
   onReactivar: (caso: Caso) => void
+  onEditar: (caso: Caso) => void
 }
 
-export function CasoCard({ caso, onAsignar, onReactivar}: CasoCardProps) {
+export function CasoCard({ caso, onAsignar, onReactivar, onEditar }: CasoCardProps) {
   const { desaparecido, estado, total_reportes, agentes_asignados, fecha_creacion } = caso
   const pill = ESTADO_PILL[estado]
   const initials = desaparecido.nombre
@@ -141,6 +142,14 @@ export function CasoCard({ caso, onAsignar, onReactivar}: CasoCardProps) {
           <span>{formatDate(fecha_creacion)}</span>
         </div>
       </div>
+
+      <button
+        onClick={(e) => { e.stopPropagation(); onEditar(caso) }}
+        className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand-base hover:bg-brand-dark px-2.5 py-1.5 rounded-lg transition-colors flex-shrink-0"
+      >
+        <Pencil size={12} />
+        Editar caso
+      </button>
 
       <div className="flex items-center gap-3 flex-shrink-0">
         <div className="flex items-center gap-1 text-text-muted text-xs">

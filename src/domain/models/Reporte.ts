@@ -17,8 +17,14 @@ export interface Reporte {
   metadata_seguridad: { anonimo: boolean }
   datos_contacto: DatosContacto
   validado: boolean
+  descartado?: boolean
 }
 
 export interface ValidarReportePayload {
   validado: boolean
+}
+
+export interface PriorizarReportePayload {
+  prioridad_policial: boolean
+  validado?: boolean
 }

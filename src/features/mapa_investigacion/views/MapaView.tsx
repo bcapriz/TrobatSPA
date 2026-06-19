@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
+import { Map, AdvancedMarker } from '@vis.gl/react-google-maps'
 import { Loader2, AlertCircle, MapPin, Terminal, Search, X } from 'lucide-react'
 import type { Reporte } from '../../../domain/models'
 import { useObtenerReportes } from '../hooks/useObtenerReportes'
@@ -10,8 +10,7 @@ import { ReportePanel } from '../components/ReportePanel'
 import { MapaFiltros } from '../components/MapaFiltros'
 
 const MAPS_API_KEY = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ?? ''
-const MAPS_MAP_ID =
-  (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || 'DEMO_MAP_ID'
+const MAPS_MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || 'DEMO_MAP_ID'
 
 const BUENOS_AIRES = { lat: -34.6037, lng: -58.3816 }
 
@@ -178,7 +177,6 @@ export function MapaView() {
                     </p>
                   </div>
                 </div>
-
                 <div className="bg-bg-panel border border-border-soft rounded-xl p-4 space-y-3 text-sm">
                   <p className="text-text-secondary font-medium">Cómo configurarlo:</p>
                   <ol className="space-y-2 text-text-muted">
@@ -207,38 +205,33 @@ export function MapaView() {
                       VITE_GOOGLE_MAPS_API_KEY=tu_clave_aquí
                     </code>
                   </div>
-                  <p className="text-text-muted text-xs">
-                    Reiniciá el servidor de desarrollo después de guardar.
-                  </p>
                 </div>
               </div>
             </div>
           ) : (
-            <APIProvider apiKey={MAPS_API_KEY}>
-              <Map
-                style={{ width: '100%', height: '100%' }}
-                defaultCenter={BUENOS_AIRES}
-                defaultZoom={12}
-                gestureHandling="greedy"
-                disableDefaultUI={false}
-                colorScheme="DARK"
-                mapId={MAPS_MAP_ID}
-              >
-                {reportesFiltrados.map((reporte) => {
-                  const [lng, lat] = reporte.location.coordinates
-                  return (
-                    <AdvancedMarker
-                      key={reporte.id}
-                      position={{ lat, lng }}
-                      onClick={() => handleMarkerClick(reporte)}
-                      zIndex={reporte.prioridad_policial ? 10 : 1}
-                    >
-                      <MarkerPin reporte={reporte} />
-                    </AdvancedMarker>
-                  )
-                })}
-              </Map>
-            </APIProvider>
+            <Map
+              style={{ width: '100%', height: '100%' }}
+              defaultCenter={BUENOS_AIRES}
+              defaultZoom={12}
+              gestureHandling="greedy"
+              disableDefaultUI={false}
+              colorScheme="DARK"
+              mapId={MAPS_MAP_ID}
+            >
+              {reportesFiltrados.map((reporte) => {
+                const [lng, lat] = reporte.location.coordinates
+                return (
+                  <AdvancedMarker
+                    key={reporte.id}
+                    position={{ lat, lng }}
+                    onClick={() => handleMarkerClick(reporte)}
+                    zIndex={reporte.prioridad_policial ? 10 : 1}
+                  >
+                    <MarkerPin reporte={reporte} />
+                  </AdvancedMarker>
+                )
+              })}
+            </Map>
           )}
         </div>
 

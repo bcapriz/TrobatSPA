@@ -1,8 +1,9 @@
-import type { Reporte, ValidarReportePayload } from '../../domain/models'
+import type { Reporte, ValidarReportePayload, PriorizarReportePayload } from '../../domain/models'
 import { apiClient } from '../../core/api'
 
 export interface ListarReportesFiltros {
   caso_id?: string
+  validado?: boolean
   page?: number
   limit?: number
 }
@@ -21,4 +22,9 @@ export const reportesService = {
 
   validar: (id: string, payload: ValidarReportePayload) =>
     apiClient.patch<{ mensaje: string }>(`/reportes/${id}/validar`, payload).then((r) => r.data),
+
+  priorizar: (id: string, payload: PriorizarReportePayload) =>
+    apiClient
+      .patch<{ mensaje: string }>(`/reportes/${id}/prioridad`, payload)
+      .then((r) => r.data),
 }
