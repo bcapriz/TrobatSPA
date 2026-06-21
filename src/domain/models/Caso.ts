@@ -26,6 +26,7 @@ export interface Caso {
   estado: EstadoCaso
   total_reportes: number
   fecha_creacion: string
+  foto_url?: string
 }
 
 export interface CrearCasoPayload {
@@ -33,4 +34,5 @@ export interface CrearCasoPayload {
   agentes_asignados: string[]
   desaparecido: DesaparecidoInfo
   representante_externo: RepresentanteExterno
+  foto_url: string
 }

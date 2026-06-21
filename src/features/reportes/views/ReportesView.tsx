@@ -11,11 +11,14 @@ import {
   X,
   Image,
 } from 'lucide-react'
+import { Map, AdvancedMarker } from '@vis.gl/react-google-maps'
 import type { Reporte } from '../../../domain/models'
 import { useReportesBandeja } from '../hooks/useReportesBandeja'
 import { useValidarReporteMutation } from '../../mapa_investigacion/hooks/useValidarReporteMutation'
 import { useAsignarPrioridadMutation } from '../../casos/hooks/useAsignarPrioridadMutation'
 import { useReverseGeocode } from '../../../shared/hooks/useReverseGeocode'
+
+const MAPS_MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || 'DEMO_MAP_ID'
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -118,7 +121,7 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
         {/* Photo */}
         {reporte.photo_url ? (
           <a href={reporte.photo_url} target="_blank" rel="noreferrer" className="block">
-            <div className="w-full aspect-video bg-bg-hover overflow-hidden hover:opacity-90 transition-opacity">
+            <div className="w-full h-52 bg-bg-hover overflow-hidden hover:opacity-90 transition-opacity">
               <img
                 src={reporte.photo_url}
                 alt="Evidencia"
@@ -127,7 +130,7 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
             </div>
           </a>
         ) : (
-          <div className="w-full aspect-video bg-bg-hover flex flex-col items-center justify-center gap-2">
+          <div className="w-full h-52 bg-bg-hover flex flex-col items-center justify-center gap-2">
             <Image size={24} className="text-text-muted/40" />
             <p className="text-text-muted text-xs">Sin foto</p>
           </div>
@@ -175,6 +178,20 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
             </div>
 
             <p className="text-text-secondary text-xs">{formatFull(reporte.timestamp)}</p>
+          </div>
+
+          {/* Mapa de ubicación */}
+          <div className="h-40 rounded-lg overflow-hidden border border-border-soft">
+            <Map
+              defaultCenter={{ lat, lng }}
+              defaultZoom={15}
+              mapId={MAPS_MAP_ID}
+              gestureHandling="cooperative"
+              disableDefaultUI
+              clickableIcons={false}
+            >
+              <AdvancedMarker position={{ lat, lng }} />
+            </Map>
           </div>
 
           {/* Contacto */}
@@ -543,8 +560,9 @@ export function ReportesView() {
 
       {/* Right: detail panel */}
       {selectedReporte && (
-        <div className="w-[320px] flex-shrink-0 flex flex-col overflow-hidden border-l border-border-soft">
+        <div className="w-[440px] flex-shrink-0 flex flex-col overflow-hidden border-l border-border-soft">
           <DetailPanel
+            key={selectedReporte.id}
             reporte={selectedReporte}
             casoNombre={casoNombres[selectedReporte.caso_id] ?? 'Caso desconocido'}
             onClose={() => setSelectedId(null)}

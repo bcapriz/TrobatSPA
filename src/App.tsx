@@ -11,6 +11,7 @@ import { ReportesView } from './features/reportes/views/ReportesView'
 import { AgentesView } from './features/agentes/views/AgentesView'
 import { NotificacionesView } from './features/notificaciones/views/NotificacionesView'
 import { PerfilView } from './features/perfil/views/PerfilView'
+import { ToastProvider } from './shared/components/Toast'
 
 const MAPS_API_KEY = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ?? ''
 
@@ -24,24 +25,26 @@ function App() {
   return (
     <APIProvider apiKey={MAPS_API_KEY} libraries={['places']}>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<LoginView />} />
-            <Route element={<ProtectedRoute />}>
-              <Route element={<MainLayout />}>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<DashboardView />} />
-                <Route path="/mapa" element={<MapaView />} />
-                <Route path="/casos" element={<CasosView />} />
-                <Route path="/reportes" element={<ReportesView />} />
-                <Route path="/agentes" element={<AgentesView />} />
-                <Route path="/notificaciones" element={<NotificacionesView />} />
-                <Route path="/perfil" element={<PerfilView />} />
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<LoginView />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<MainLayout />}>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<DashboardView />} />
+                  <Route path="/mapa" element={<MapaView />} />
+                  <Route path="/casos" element={<CasosView />} />
+                  <Route path="/reportes" element={<ReportesView />} />
+                  <Route path="/agentes" element={<AgentesView />} />
+                  <Route path="/notificaciones" element={<NotificacionesView />} />
+                  <Route path="/perfil" element={<PerfilView />} />
+                </Route>
               </Route>
-            </Route>
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        </BrowserRouter>
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
       </QueryClientProvider>
     </APIProvider>
   )
