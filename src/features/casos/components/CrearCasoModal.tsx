@@ -4,7 +4,6 @@ import { Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-googl
 import type { Ubicacion } from '../../../domain/models'
 import { useAuthStore } from '../../../core/stores/authStore'
 import { useCrearCasoMutation } from '../hooks/useCrearCasoMutation'
-import { subirFotoCaso } from '../../../data/services/storageService'
 import { useToast } from '../../../shared/components/Toast'
 
 const MAPS_MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || 'DEMO_MAP_ID'
@@ -55,8 +54,6 @@ export function CrearCasoModal({ onClose }: Props) {
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
   const [fotoError, setFotoError] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadError, setUploadError] = useState(false)
 
   const addressInputRef = useRef<HTMLInputElement>(null)
   const fotoInputRef = useRef<HTMLInputElement>(null)
@@ -105,7 +102,7 @@ export function CrearCasoModal({ onClose }: Props) {
     setUploadError(false)
   }
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
 
     if (!fotoFile) {
@@ -119,19 +116,6 @@ export function CrearCasoModal({ onClose }: Props) {
       return
     }
 
-    setIsUploading(true)
-    setUploadError(false)
-
-    let fotoUrl: string
-    try {
-      fotoUrl = await subirFotoCaso(fotoFile)
-    } catch {
-      setUploadError(true)
-      setIsUploading(false)
-      return
-    }
-    setIsUploading(false)
-
     const last_known_location: Ubicacion = {
       type: 'Point',
       coordinates: [coordenadas.lng, coordenadas.lat],
@@ -139,21 +123,23 @@ export function CrearCasoModal({ onClose }: Props) {
 
     mutation.mutate(
       {
-        admin_officer_id: oficialId,
-        assigned_agents: [],
-        missing_person: {
-          name: form.nombre.trim(),
-          description: form.descripcion.trim(),
-          age: parseInt(form.edad) || 0,
-          last_seen_date: form.fecha_ultima_vez_visto,
-          location_description: addressInputRef.current?.value.trim() ?? '',
-          last_known_location,
-          image: fotoUrl,
-        },
-        external_contact: {
-          name: form.repNombre.trim(),
-          email: form.repEmail.trim(),
-          phone: form.repTelefono.trim(),
+        foto: fotoFile,
+        payload: {
+          admin_officer_id: oficialId,
+          assigned_agents: [],
+          missing_person: {
+            name: form.nombre.trim(),
+            description: form.descripcion.trim(),
+            age: parseInt(form.edad) || 0,
+            last_seen_date: form.fecha_ultima_vez_visto,
+            location_description: addressInputRef.current?.value.trim() ?? '',
+            last_known_location,
+          },
+          external_contact: {
+            name: form.repNombre.trim(),
+            email: form.repEmail.trim(),
+            phone: form.repTelefono.trim(),
+          },
         },
       },
       {
@@ -165,7 +151,7 @@ export function CrearCasoModal({ onClose }: Props) {
     )
   }
 
-  const isBusy = isUploading || mutation.isPending
+  const isBusy = mutation.isPending
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -403,12 +389,6 @@ export function CrearCasoModal({ onClose }: Props) {
             </div>
           </section>
 
-          {uploadError && (
-            <p className="text-priority-high text-sm bg-priority-high/10 border border-priority-high/20 rounded-lg px-3 py-2">
-              Error al subir la foto. Verificá tu conexión e intentá nuevamente.
-            </p>
-          )}
-
           {mutation.isError && (
             <p className="text-priority-high text-sm bg-priority-high/10 border border-priority-high/20 rounded-lg px-3 py-2">
               Error al crear el caso. Intente nuevamente.
@@ -429,7 +409,7 @@ export function CrearCasoModal({ onClose }: Props) {
               disabled={isBusy}
               className="px-5 py-2 text-sm font-semibold bg-brand-base hover:bg-brand-dark text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isUploading ? 'Subiendo foto...' : mutation.isPending ? 'Guardando...' : 'Guardar caso'}
+              {mutation.isPending ? 'Guardando...' : 'Guardar caso'}
             </button>
           </div>
         </form>

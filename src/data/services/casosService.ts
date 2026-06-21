@@ -37,8 +37,12 @@ export const casosService = {
   obtener: (id: string) =>
     apiClient.get<Caso>(`/casos/${id}`).then((r) => r.data),
 
-  crear: (payload: CrearCasoPayload) =>
-    apiClient.post<{ id: string; message: string }>('/casos', payload).then((r) => r.data),
+  crear: ({ payload, foto }: { payload: CrearCasoPayload; foto: File }) => {
+    const formData = new FormData()
+    formData.append('datos', JSON.stringify(payload))
+    formData.append('foto', foto)
+    return apiClient.post<{ id: string; message: string }>('/casos', formData).then((r) => r.data)
+  },
 
   actualizarEstado: (id: string, status: EstadoCaso) =>
     apiClient
