@@ -2,12 +2,16 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { casosService } from '../../../data/services/casosService'
 import { reportesService } from '../../../data/services/reportesService'
+import { notificacionesService } from '../../../data/services/notificacionesService'
+
+export const NOTIFICACIONES_QUERY_KEY = 'notificaciones-log'
 
 export type TipoNotif =
   | 'reporte_prioritario'
   | 'reporte_validado'
   | 'reporte_nuevo'
   | 'caso_nuevo'
+  | 'alerta_push'
 
 export interface FeedItem {
   id: string
@@ -67,8 +71,16 @@ export function useFeedNotificaciones() {
     refetchInterval: 60_000,
   })
 
+  const notificacionesQuery = useQuery({
+    queryKey: [NOTIFICACIONES_QUERY_KEY],
+    queryFn: () => notificacionesService.listar({ limit: 100 }),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  })
+
   const casos = casosQuery.data?.data ?? []
   const reportes = reportesQuery.data?.data ?? []
+  const notificaciones = notificacionesQuery.data?.data ?? []
 
   const casoNombres = useMemo(
     () => Object.fromEntries(casos.map((c) => [c.id, c.missing_person.name])),
@@ -123,14 +135,25 @@ export function useFeedNotificaciones() {
       })
     }
 
+    for (const n of notificaciones) {
+      items.push({
+        id: `push-${n.id}`,
+        tipo: 'alerta_push',
+        titulo: n.titulo,
+        subtitulo: n.descripcion,
+        timestamp: n.sent_at ?? n.created_at,
+        urgente: true,
+      })
+    }
+
     return items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-  }, [reportes, casos, casoNombres])
+  }, [reportes, casos, casoNombres, notificaciones])
 
   const urgentes = feed.filter((f) => f.urgente).length
 
   return {
-    isLoading: casosQuery.isLoading || reportesQuery.isLoading,
-    isError: casosQuery.isError || reportesQuery.isError,
+    isLoading: casosQuery.isLoading || reportesQuery.isLoading || notificacionesQuery.isLoading,
+    isError: casosQuery.isError || reportesQuery.isError || notificacionesQuery.isError,
     feed,
     urgentes,
     groupByDay: () => groupByDay(feed),
