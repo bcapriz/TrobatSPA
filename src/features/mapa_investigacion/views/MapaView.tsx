@@ -81,7 +81,7 @@ export function MapaView() {
       const diff = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       return ordenFecha === 'desc' ? -diff : diff
     })
-  }, [reportesData, soloPrioridad, soloValidados, soloPendientes, ordenFecha])
+  }, [reportesData, casosData, soloPrioridad, soloValidados, soloPendientes, ordenFecha])
 
   const handleMarkerClick = (reporte: Reporte) => {
     setSelectedReporte((prev) => (prev?.id === reporte.id ? null : reporte))
