@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Flag, ShieldCheck, Bell, FolderOpen, Loader2, AlertCircle, Plus } from 'lucide-react'
+import { Flag, ShieldCheck, Bell, FolderOpen, Loader2, AlertCircle, Plus, Megaphone } from 'lucide-react'
 import type { TipoNotif, FeedItem } from '../hooks/useFeedNotificaciones'
 import { useFeedNotificaciones } from '../hooks/useFeedNotificaciones'
 import { CrearNotificacionModal } from '../components/CrearNotificacionModal'
@@ -33,6 +33,11 @@ const TIPO_META: Record<
     icon: FolderOpen,
     iconClass: 'text-text-secondary',
     ring: 'bg-bg-hover border-border-soft',
+  },
+  alerta_push: {
+    icon: Megaphone,
+    iconClass: 'text-priority-high',
+    ring: 'bg-priority-high/15 border-priority-high/30',
   },
 }
 
