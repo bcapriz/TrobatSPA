@@ -16,7 +16,7 @@ export function useReportesBandeja() {
   const casos = casosQuery.data?.data ?? []
 
   const casoNombres = useMemo(
-    () => Object.fromEntries(casos.map((c) => [c.id, c.desaparecido.nombre])),
+    () => Object.fromEntries(casos.map((c) => [c.id, c.missing_person.name])),
     [casos],
   )
 
@@ -28,9 +28,9 @@ export function useReportesBandeja() {
     casoNombres,
     totales: {
       todos: reportes.length,
-      pendientes: reportes.filter((r) => !r.validado).length,
-      prioritarios: reportes.filter((r) => r.prioridad_policial).length,
-      validados: reportes.filter((r) => r.validado).length,
+      pendientes: reportes.filter((r) => !r.validated).length,
+      prioritarios: reportes.filter((r) => r.police_priority).length,
+      validados: reportes.filter((r) => r.validated).length,
     },
   }
 }

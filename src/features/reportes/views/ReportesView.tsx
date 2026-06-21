@@ -72,17 +72,17 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
     if (confirmAction === 'asignarPrioridad') {
       prioridadMutation.mutate({
         id: reporte.id,
-        payload: { prioridad_policial: true, validado: true },
+        payload: { police_priority: true, validated: true },
       })
     } else if (confirmAction === 'quitarPrioridad') {
-      prioridadMutation.mutate({ id: reporte.id, payload: { prioridad_policial: false } })
+      prioridadMutation.mutate({ id: reporte.id, payload: { police_priority: false } })
     } else if (confirmAction === 'quitarValidacion') {
       validarMutation.mutate(
-        { id: reporte.id, validado: false },
+        { id: reporte.id, validated: false },
         {
           onSuccess: () => {
-            if (reporte.prioridad_policial) {
-              prioridadMutation.mutate({ id: reporte.id, payload: { prioridad_policial: false } })
+            if (reporte.police_priority) {
+              prioridadMutation.mutate({ id: reporte.id, payload: { police_priority: false } })
             }
           },
         },
@@ -93,7 +93,7 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
   const confirmLabels: Record<NonNullable<ConfirmAction>, string> = {
     asignarPrioridad: 'Asignar prioridad alta y validar automáticamente este reporte',
     quitarPrioridad: 'Quitar la prioridad alta de este reporte',
-    quitarValidacion: 'Quitar la validación' + (reporte.prioridad_policial ? ' y la prioridad alta' : '') + ' de este reporte',
+    quitarValidacion: 'Quitar la validación' + (reporte.police_priority ? ' y la prioridad alta' : '') + ' de este reporte',
   }
 
   return (
@@ -102,7 +102,7 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-soft flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-text-primary font-semibold text-sm">Detalle</span>
-          {reporte.prioridad_policial && (
+          {reporte.police_priority && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-priority-high bg-priority-high/15 border border-priority-high/25 px-1.5 py-0.5 rounded-full">
               <Flag size={9} />
               ALTA
@@ -147,7 +147,7 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
           <div>
             <p className="text-text-muted text-[11px] uppercase tracking-wide mb-1">Descripción</p>
             <p className="text-text-primary text-sm leading-relaxed">
-              {reporte.descripcion || 'Sin descripción'}
+              {reporte.description || 'Sin descripción'}
             </p>
           </div>
 
@@ -195,24 +195,24 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
           </div>
 
           {/* Contacto */}
-          {(reporte.datos_contacto.nombre || reporte.datos_contacto.telefono) && (
+          {(reporte.contact_info.name || reporte.contact_info.phone) && (
             <div className="bg-bg-hover rounded-lg p-3 space-y-1.5">
               <p className="text-text-muted text-[11px] uppercase tracking-wide">Contacto</p>
-              {reporte.datos_contacto.nombre && (
+              {reporte.contact_info.name && (
                 <div className="flex items-center gap-2">
                   <User size={12} className="text-text-muted" />
-                  <span className="text-text-primary text-sm">{reporte.datos_contacto.nombre}</span>
+                  <span className="text-text-primary text-sm">{reporte.contact_info.name}</span>
                 </div>
               )}
-              {reporte.datos_contacto.telefono && (
+              {reporte.contact_info.phone && (
                 <div className="flex items-center gap-2">
                   <Phone size={12} className="text-text-muted" />
                   <span className="text-text-primary text-sm">
-                    {reporte.datos_contacto.telefono}
+                    {reporte.contact_info.phone}
                   </span>
                 </div>
               )}
-              {reporte.metadata_seguridad.anonimo && (
+              {reporte.security_metadata.anonymous && (
                 <span className="inline-block text-[10px] text-text-muted border border-border-soft px-2 py-0.5 rounded-full">
                   Anónimo
                 </span>
@@ -251,7 +251,7 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
         )}
 
         {/* Botón quitar / asignar prioridad */}
-        {!confirmAction && (reporte.prioridad_policial ? (
+        {!confirmAction && (reporte.police_priority ? (
           <button
             onClick={() => setConfirmAction('quitarPrioridad')}
             disabled={isPending}
@@ -272,7 +272,7 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
         ))}
 
         {/* Botón validar / quitar validación */}
-        {!confirmAction && (reporte.validado ? (
+        {!confirmAction && (reporte.validated ? (
           <button
             onClick={() => setConfirmAction('quitarValidacion')}
             disabled={isPending}
@@ -283,7 +283,7 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
           </button>
         ) : (
           <button
-            onClick={() => validarMutation.mutate({ id: reporte.id, validado: true })}
+            onClick={() => validarMutation.mutate({ id: reporte.id, validated: true })}
             disabled={isPending}
             className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-priority-low hover:bg-priority-low/80 text-white rounded-lg transition-colors disabled:opacity-50"
           >
@@ -307,9 +307,9 @@ interface ReporteRowProps {
 }
 
 function ReporteRow({ reporte, casoNombre, isSelected, onClick }: ReporteRowProps) {
-  const dotColor = reporte.prioridad_policial
+  const dotColor = reporte.police_priority
     ? 'bg-priority-high'
-    : reporte.validado
+    : reporte.validated
       ? 'bg-priority-low'
       : 'bg-brand-base'
 
@@ -328,7 +328,7 @@ function ReporteRow({ reporte, casoNombre, isSelected, onClick }: ReporteRowProp
       {/* Descripción */}
       <td className="px-2 py-3 max-w-0">
         <p className="text-text-primary text-sm truncate">
-          {reporte.descripcion || (
+          {reporte.description || (
             <span className="text-text-muted italic">Sin descripción</span>
           )}
         </p>
@@ -349,7 +349,7 @@ function ReporteRow({ reporte, casoNombre, isSelected, onClick }: ReporteRowProp
       {/* Badges */}
       <td className="px-4 py-3 w-36">
         <div className="flex items-center gap-1.5 justify-end">
-          {reporte.prioridad_policial && (
+          {reporte.police_priority && (
             <span className="flex items-center gap-0.5 text-[9px] font-bold text-priority-high bg-priority-high/15 border border-priority-high/25 px-1.5 py-0.5 rounded-full">
               <Flag size={8} />
               ALTA
@@ -357,12 +357,12 @@ function ReporteRow({ reporte, casoNombre, isSelected, onClick }: ReporteRowProp
           )}
           <span
             className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
-              reporte.validado
+              reporte.validated
                 ? 'text-priority-low bg-priority-low/15 border-priority-low/25'
                 : 'text-text-muted bg-bg-hover border-border-soft'
             }`}
           >
-            {reporte.validado ? 'VALIDADO' : 'PENDIENTE'}
+            {reporte.validated ? 'VALIDADO' : 'PENDIENTE'}
           </span>
         </div>
       </td>
@@ -381,7 +381,7 @@ export function ReportesView() {
 
   const casosAbiertosIds = useMemo(
     () => new Set(casos
-      .filter((c) => c.estado === 'investigacion_activa' || c.estado === 'suspendido')
+      .filter((c) => c.status === 'active_investigation')
       .map((c) => c.id)
     ),
     [casos],
@@ -389,18 +389,18 @@ export function ReportesView() {
 
   const reportesFiltrados = useMemo(() => {
     let list = [...reportes]
-      .filter((r) => casosAbiertosIds.has(r.caso_id))
+      .filter((r) => casosAbiertosIds.has(r.case_id))
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
-    if (casoIdFiltro) list = list.filter((r) => r.caso_id === casoIdFiltro)
+    if (casoIdFiltro) list = list.filter((r) => r.case_id === casoIdFiltro)
 
     switch (activeTab) {
       case 'pendientes':
-        return list.filter((r) => !r.validado)
+        return list.filter((r) => !r.validated)
       case 'prioritarios':
-        return list.filter((r) => r.prioridad_policial)
+        return list.filter((r) => r.police_priority)
       case 'validados':
-        return list.filter((r) => r.validado)
+        return list.filter((r) => r.validated)
       default:
         return list
     }
@@ -408,16 +408,16 @@ export function ReportesView() {
 
   // Buscar en todos los reportes visibles para que el panel no desaparezca
   // cuando el reporte cambia de estado y sale del filtro activo
-  const visibleReportes = reportes.filter((r) => casosAbiertosIds.has(r.caso_id))
+  const visibleReportes = reportes.filter((r) => casosAbiertosIds.has(r.case_id))
   const selectedReporte = selectedId
     ? visibleReportes.find((r) => r.id === selectedId) ?? null
     : null
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: 'todos', label: 'Todos', count: visibleReportes.length },
-    { key: 'pendientes', label: 'Pendientes', count: visibleReportes.filter((r) => !r.validado).length },
-    { key: 'prioritarios', label: 'Prioritarios', count: visibleReportes.filter((r) => r.prioridad_policial).length },
-    { key: 'validados', label: 'Validados', count: visibleReportes.filter((r) => r.validado).length },
+    { key: 'pendientes', label: 'Pendientes', count: visibleReportes.filter((r) => !r.validated).length },
+    { key: 'prioritarios', label: 'Prioritarios', count: visibleReportes.filter((r) => r.police_priority).length },
+    { key: 'validados', label: 'Validados', count: visibleReportes.filter((r) => r.validated).length },
   ]
 
   const handleRowClick = (id: string) => {
@@ -456,7 +456,7 @@ export function ReportesView() {
                 <option value="">Todos los casos</option>
                 {casos.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.desaparecido.nombre}
+                    {c.missing_person.name}
                   </option>
                 ))}
               </select>
@@ -547,7 +547,7 @@ export function ReportesView() {
                   <ReporteRow
                     key={reporte.id}
                     reporte={reporte}
-                    casoNombre={casoNombres[reporte.caso_id] ?? 'Caso desconocido'}
+                    casoNombre={casoNombres[reporte.case_id] ?? 'Caso desconocido'}
                     isSelected={selectedId === reporte.id}
                     onClick={() => handleRowClick(reporte.id)}
                   />
@@ -564,7 +564,7 @@ export function ReportesView() {
           <DetailPanel
             key={selectedReporte.id}
             reporte={selectedReporte}
-            casoNombre={casoNombres[selectedReporte.caso_id] ?? 'Caso desconocido'}
+            casoNombre={casoNombres[selectedReporte.case_id] ?? 'Caso desconocido'}
             onClose={() => setSelectedId(null)}
           />
         </div>

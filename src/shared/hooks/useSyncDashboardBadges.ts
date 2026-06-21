@@ -27,14 +27,12 @@ export function useSyncDashboardBadges() {
 
   useEffect(() => {
     const casos = casosData?.data ?? []
-    setCasosActivos(
-      casos.filter((c) => c.estado === 'investigacion_activa' || c.estado === 'suspendido').length,
-    )
+    setCasosActivos(casos.filter((c) => c.status === 'active_investigation').length)
   }, [casosData, setCasosActivos])
 
   useEffect(() => {
     const reportes = reportesData?.data ?? []
-    setReportesPendientes(reportes.filter((r) => !r.validado).length)
-    setNotificacionesSinLeer(reportes.filter((r) => r.prioridad_policial && !r.validado).length)
+    setReportesPendientes(reportes.filter((r) => !r.validated).length)
+    setNotificacionesSinLeer(reportes.filter((r) => r.police_priority && !r.validated).length)
   }, [reportesData, setReportesPendientes, setNotificacionesSinLeer])
 }

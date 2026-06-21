@@ -23,25 +23,19 @@ function formatShort(iso: string): string {
 }
 
 const ESTADO_META: Record<EstadoCaso, { label: string; bg: string; text: string; bar: string }> = {
-  investigacion_activa: {
+  active_investigation: {
     label: 'Activa',
     bg: 'bg-brand-base/15',
     text: 'text-brand-base',
     bar: 'bg-brand-base',
   },
-  suspendido: {
-    label: 'Suspendido',
-    bg: 'bg-yellow-500/15',
-    text: 'text-yellow-400',
-    bar: 'bg-yellow-400',
-  },
-  resuelto: {
+  resolved: {
     label: 'Resuelto',
     bg: 'bg-priority-low/15',
     text: 'text-priority-low',
     bar: 'bg-priority-low',
   },
-  cerrado: {
+  closed: {
     label: 'Cerrado',
     bg: 'bg-border-soft',
     text: 'text-text-muted',
@@ -115,13 +109,13 @@ function CasosRecientes({ casos }: { casos: Caso[] }) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-text-primary text-sm font-medium truncate">
-              {caso.desaparecido.nombre}
+              {caso.missing_person.name}
             </p>
-            <p className="text-text-muted text-xs">{formatShort(caso.fecha_creacion)}</p>
+            <p className="text-text-muted text-xs">{formatShort(caso.created_at)}</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-text-muted text-xs">{caso.agentes_asignados.length} ag.</span>
-            <EstadoBadge estado={caso.estado} />
+            <span className="text-text-muted text-xs">{caso.assigned_agents.length} ag.</span>
+            <EstadoBadge estado={caso.status} />
           </div>
         </button>
       ))}
@@ -149,7 +143,7 @@ function AlertasActivas({ reportes }: { reportes: Reporte[] }) {
           <Flag size={13} className="text-priority-high mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-text-primary text-xs font-medium leading-relaxed line-clamp-2">
-              {r.descripcion || 'Sin descripción'}
+              {r.description || 'Sin descripción'}
             </p>
             <p className="text-text-muted text-[11px] mt-1">{formatRelative(r.timestamp)}</p>
           </div>
@@ -177,20 +171,20 @@ function ReportesRecientes({ reportes }: { reportes: Reporte[] }) {
         >
           <div
             className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
-              r.prioridad_policial
+              r.police_priority
                 ? 'bg-priority-high'
-                : r.validado
+                : r.validated
                   ? 'bg-priority-low'
                   : 'bg-brand-base'
             }`}
           />
           <div className="flex-1 min-w-0">
             <p className="text-text-primary text-xs leading-relaxed line-clamp-1">
-              {r.descripcion || 'Sin descripción'}
+              {r.description || 'Sin descripción'}
             </p>
             <p className="text-text-muted text-[11px] mt-0.5">{formatRelative(r.timestamp)}</p>
           </div>
-          {r.prioridad_policial && (
+          {r.police_priority && (
             <span className="text-[9px] font-bold text-priority-high bg-priority-high/15 border border-priority-high/25 px-1.5 py-0.5 rounded-full flex-shrink-0">
               ALTA
             </span>
@@ -209,10 +203,9 @@ function EstadoDistribucion({
   total: number
 }) {
   const items = [
-    { key: 'investigacion_activa' as EstadoCaso, count: estadosCount.investigacion_activa },
-    { key: 'suspendido' as EstadoCaso, count: estadosCount.suspendido },
-    { key: 'resuelto' as EstadoCaso, count: estadosCount.resuelto },
-    { key: 'cerrado' as EstadoCaso, count: estadosCount.cerrado },
+    { key: 'active_investigation' as EstadoCaso, count: estadosCount.active_investigation },
+    { key: 'resolved' as EstadoCaso, count: estadosCount.resolved },
+    { key: 'closed' as EstadoCaso, count: estadosCount.closed },
   ].filter((i) => i.count > 0)
 
   if (total === 0) {

@@ -37,7 +37,7 @@ export function AsignarAgenteModal({ caso, onClose }: Props) {
     )
   })
 
-  const esAsignado = (id: string) => caso.agentes_asignados.includes(id)
+  const esAsignado = (id: string) => caso.assigned_agents.includes(id)
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -45,7 +45,7 @@ export function AsignarAgenteModal({ caso, onClose }: Props) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-soft">
           <div>
             <h2 className="text-text-primary font-semibold">Asignar colaborador</h2>
-            <p className="text-text-muted text-xs mt-0.5">{caso.desaparecido.nombre}</p>
+            <p className="text-text-muted text-xs mt-0.5">{caso.missing_person.name}</p>
           </div>
           <button
             onClick={onClose}
@@ -83,7 +83,7 @@ export function AsignarAgenteModal({ caso, onClose }: Props) {
                 key={oficial.id}
                 oficial={oficial}
                 esAsignado={esAsignado(oficial.id)}
-                esAdministrador={oficial.id === caso.oficial_administrador_id}
+                esAdministrador={oficial.id === caso.admin_officer_id}
                 onAsignar={() => asignar.mutate(oficial.id)}
                 onRemover={() => remover.mutate(oficial.id)}
                 isPending={isPending}

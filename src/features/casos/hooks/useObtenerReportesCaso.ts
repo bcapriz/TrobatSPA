@@ -7,8 +7,7 @@ export function useObtenerReportesCaso(casoId: string) {
     queryKey: ['reportes-caso', casoId],
     queryFn: () =>
       reportesService.listar({
-        caso_id: casoId,
-        validado: false,
+        case_id: casoId,
         limit: 100,
       }),
     enabled: !!casoId,
@@ -19,7 +18,7 @@ export function useObtenerReportesCaso(casoId: string) {
     data: useMemo(
       () => ({
         ...query.data,
-        data: query.data?.data.filter((reporte) => !reporte.validado && !reporte.descartado),
+        data: query.data?.data.filter((reporte) => !reporte.validated),
       }),
       [query.data],
     ),

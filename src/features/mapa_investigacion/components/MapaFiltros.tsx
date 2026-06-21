@@ -18,8 +18,8 @@ export function MapaFiltros({ reportes }: Props) {
   const reset = useMapaStore((s) => s.reset)
 
   const total = reportes.length
-  const prioritarios = reportes.filter((r) => r.prioridad_policial).length
-  const validados = reportes.filter((r) => r.validado).length
+  const prioritarios = reportes.filter((r) => r.police_priority).length
+  const validados = reportes.filter((r) => r.validated).length
   const pendientes = total - validados
 
   // Funciones de manejo exclusivas para cada filtro

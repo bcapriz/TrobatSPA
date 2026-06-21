@@ -14,23 +14,19 @@ export interface ListarCasosResponse {
   hasMore: boolean
 }
 
-export interface ActualizarEstadoPayload {
-  estado: EstadoCaso
-}
-
 export interface EditarCasoPayload {
-  desaparecido: {
-    nombre: string
-    descripcion: string
-    edad: number
-    fecha_ultima_vez_visto: string
-    descripcion_ubicacion: string
-    ultima_ubicacion_oficial: import('../../domain/models').Ubicacion
+  missing_person: {
+    name: string
+    description: string
+    age: number
+    last_seen_date: string
+    location_description: string
+    last_known_location: import('../../domain/models').Ubicacion
   }
-  representante_externo: {
-    nombre: string
+  external_contact: {
+    name: string
     email: string
-    telefono: string
+    phone: string
   }
 }
 
@@ -42,23 +38,23 @@ export const casosService = {
     apiClient.get<Caso>(`/casos/${id}`).then((r) => r.data),
 
   crear: (payload: CrearCasoPayload) =>
-    apiClient.post<{ id: string; mensaje: string }>('/casos', payload).then((r) => r.data),
+    apiClient.post<{ id: string; message: string }>('/casos', payload).then((r) => r.data),
 
-  actualizarEstado: (id: string, estado: EstadoCaso) =>
+  actualizarEstado: (id: string, status: EstadoCaso) =>
     apiClient
-      .patch<{ mensaje: string }>(`/casos/${id}/estado`, { estado })
+      .patch<{ message: string }>(`/casos/${id}/estado`, { status })
       .then((r) => r.data),
 
   editar: (id: string, payload: EditarCasoPayload) =>
-    apiClient.patch<{ mensaje: string }>(`/casos/${id}`, payload).then((r) => r.data),
+    apiClient.patch<{ message: string }>(`/casos/${id}`, payload).then((r) => r.data),
 
   asignarAgente: (casoId: string, agenteId: string) =>
     apiClient
-      .post<{ mensaje: string }>(`/casos/${casoId}/agentes/${agenteId}`)
+      .post<{ message: string }>(`/casos/${casoId}/agentes/${agenteId}`)
       .then((r) => r.data),
 
   removerAgente: (casoId: string, agenteId: string) =>
     apiClient
-      .delete<{ mensaje: string }>(`/casos/${casoId}/agentes/${agenteId}`)
+      .delete<{ message: string }>(`/casos/${casoId}/agentes/${agenteId}`)
       .then((r) => r.data),
 }

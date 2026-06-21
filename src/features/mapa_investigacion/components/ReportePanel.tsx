@@ -30,7 +30,7 @@ export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-soft flex-shrink-0">
         <div className="flex items-center gap-2">
           <h3 className="text-text-primary font-semibold text-sm">Detalle del reporte</h3>
-          {reporte.prioridad_policial && (
+          {reporte.police_priority && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-priority-high bg-priority-high/15 border border-priority-high/25 px-1.5 py-0.5 rounded-full">
               <Flag size={9} />
               PRIORITARIO
@@ -77,7 +77,7 @@ export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
               Descripción
             </p>
             <p className="text-text-primary text-sm leading-relaxed">
-              {reporte.descripcion || 'Sin descripción'}
+              {reporte.description || 'Sin descripción'}
             </p>
           </div>
 
@@ -115,14 +115,14 @@ export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
             </div>
           </div>
 
-          {reporte.datos_contacto.nombre && (
+          {reporte.contact_info.name && (
             <div>
               <p className="text-text-secondary text-xs uppercase tracking-wide mb-1 font-medium">
                 Contacto
               </p>
-              <p className="text-text-primary text-sm">{reporte.datos_contacto.nombre}</p>
-              {reporte.datos_contacto.telefono && (
-                <p className="text-text-muted text-xs">{reporte.datos_contacto.telefono}</p>
+              <p className="text-text-primary text-sm">{reporte.contact_info.name}</p>
+              {reporte.contact_info.phone && (
+                <p className="text-text-muted text-xs">{reporte.contact_info.phone}</p>
               )}
             </div>
           )}
@@ -130,16 +130,16 @@ export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
           <div className="flex items-center gap-2 pt-1">
             <div
               className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
-                reporte.validado
+                reporte.validated
                   ? 'bg-priority-low/15 text-priority-low border-priority-low/25'
                   : 'bg-bg-hover text-text-muted border-border-soft'
               }`}
             >
-              {reporte.validado ? <ShieldCheck size={12} /> : <ShieldOff size={12} />}
-              {reporte.validado ? 'Validado' : 'Pendiente'}
+              {reporte.validated ? <ShieldCheck size={12} /> : <ShieldOff size={12} />}
+              {reporte.validated ? 'Validado' : 'Pendiente'}
             </div>
 
-            {reporte.metadata_seguridad.anonimo && (
+            {reporte.security_metadata.anonymous && (
               <span className="text-xs text-text-muted border border-border-soft px-2 py-0.5 rounded-full">
                 Anónimo
               </span>
@@ -149,9 +149,9 @@ export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
       </div>
 
       <div className="p-4 border-t border-border-soft space-y-2 flex-shrink-0">
-        {!reporte.validado ? (
+        {!reporte.validated ? (
           <button
-            onClick={() => mutation.mutate({ id: reporte.id, validado: true })}
+            onClick={() => mutation.mutate({ id: reporte.id, validated: true })}
             disabled={mutation.isPending}
             className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-priority-low hover:bg-priority-low/80 text-white rounded-lg transition-colors disabled:opacity-50"
           >
@@ -160,7 +160,7 @@ export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
           </button>
         ) : (
           <button
-            onClick={() => mutation.mutate({ id: reporte.id, validado: false })}
+            onClick={() => mutation.mutate({ id: reporte.id, validated: false })}
             disabled={mutation.isPending}
             className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium border border-border-soft text-text-secondary hover:text-priority-high hover:border-priority-high/40 rounded-lg transition-colors disabled:opacity-50"
           >

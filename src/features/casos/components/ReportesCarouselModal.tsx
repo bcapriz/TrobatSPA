@@ -78,7 +78,7 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
     setCurrentIndex((prevIndex) => (prevIndex >= currentLength - 1 ? 0 : prevIndex))
 
     validarMutation.mutate(
-      { id: currentId, validado: true },
+      { id: currentId, validated: true },
       {
         onError: () => {
           queryClient.invalidateQueries({ queryKey: ['reportes-caso', caso.id], exact: true })
@@ -106,7 +106,7 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
     prioridadMutation.mutate(
       {
         id: currentId,
-        payload: { prioridad_policial: true, validado: true },
+        payload: { police_priority: true, validated: true },
       },
       {
         onError: () => {
@@ -128,7 +128,7 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border-soft">
           <div>
-            <h2 className="text-text-primary font-bold text-lg">{caso.desaparecido.nombre}</h2>
+            <h2 className="text-text-primary font-bold text-lg">{caso.missing_person.name}</h2>
             <p className="text-text-muted text-xs mt-1">Reportes y avistamientos</p>
           </div>
           <button
@@ -195,13 +195,13 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
                       <div className="space-y-3">
                         <div>
                           <p className="text-xs text-text-muted uppercase tracking-wide font-medium">Caso</p>
-                          <p className="text-text-primary font-semibold text-lg">{caso.desaparecido.nombre}</p>
+                          <p className="text-text-primary font-semibold text-lg">{caso.missing_person.name}</p>
                         </div>
 
                         <div>
                           <p className="text-xs text-text-muted uppercase tracking-wide font-medium">Descripción</p>
                           <p className="text-text-secondary text-sm leading-6">
-                            {currentReporte.descripcion || 'Sin descripción'}
+                            {currentReporte.description || 'Sin descripción'}
                           </p>
                         </div>
 
@@ -233,17 +233,13 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
                         <div className="rounded-2xl border border-border-soft bg-bg-panel p-4">
                           <p className="text-xs text-text-muted uppercase tracking-wide font-medium">Estado de validación</p>
                           <p className="mt-2 text-sm font-semibold text-text-primary">
-                            {currentReporte.descartado
-                              ? 'Descartado'
-                              : currentReporte.validado
-                              ? 'Validado'
-                              : 'Pendiente'}
+                            {currentReporte.validated ? 'Validado' : 'Pendiente'}
                           </p>
                         </div>
                         <div className="rounded-2xl border border-border-soft bg-bg-panel p-4">
                           <p className="text-xs text-text-muted uppercase tracking-wide font-medium">Prioridad</p>
                           <p className="mt-2 text-sm font-semibold text-text-primary">
-                            {currentReporte.prioridad_policial ? 'Prioridad alta' : 'No prioritario'}
+                            {currentReporte.police_priority ? 'Prioridad alta' : 'No prioritario'}
                           </p>
                         </div>
                       </div>
@@ -260,7 +256,7 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
                         <button
                           type="button"
                           onClick={handlePrioridadAlta}
-                          disabled={currentReporte.prioridad_policial || validarMutation.isLoading || prioridadMutation.isLoading}
+                          disabled={currentReporte.police_priority || validarMutation.isLoading || prioridadMutation.isLoading}
                           className="w-full sm:w-auto px-5 py-3 rounded-full bg-priority-high text-white font-semibold hover:bg-priority-high/90 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Asignar prioridad alta

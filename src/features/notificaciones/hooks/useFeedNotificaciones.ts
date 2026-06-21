@@ -71,7 +71,7 @@ export function useFeedNotificaciones() {
   const reportes = reportesQuery.data?.data ?? []
 
   const casoNombres = useMemo(
-    () => Object.fromEntries(casos.map((c) => [c.id, c.desaparecido.nombre])),
+    () => Object.fromEntries(casos.map((c) => [c.id, c.missing_person.name])),
     [casos],
   )
 
@@ -79,23 +79,23 @@ export function useFeedNotificaciones() {
     const items: FeedItem[] = []
 
     for (const r of reportes) {
-      const nombre = casoNombres[r.caso_id] ?? 'caso desconocido'
+      const nombre = casoNombres[r.case_id] ?? 'caso desconocido'
 
-      if (r.prioridad_policial && !r.validado) {
+      if (r.police_priority && !r.validated) {
         items.push({
           id: `r-prio-${r.id}`,
           tipo: 'reporte_prioritario',
           titulo: 'Alerta de prioridad alta',
-          subtitulo: `${nombre} · ${r.descripcion?.slice(0, 60) || 'Sin descripción'}`,
+          subtitulo: `${nombre} · ${r.description?.slice(0, 60) || 'Sin descripción'}`,
           timestamp: r.timestamp,
           urgente: true,
         })
-      } else if (r.validado) {
+      } else if (r.validated) {
         items.push({
           id: `r-val-${r.id}`,
           tipo: 'reporte_validado',
           titulo: 'Reporte validado',
-          subtitulo: `${nombre} · ${r.descripcion?.slice(0, 60) || 'Sin descripción'}`,
+          subtitulo: `${nombre} · ${r.description?.slice(0, 60) || 'Sin descripción'}`,
           timestamp: r.timestamp,
           urgente: false,
         })
@@ -104,7 +104,7 @@ export function useFeedNotificaciones() {
           id: `r-new-${r.id}`,
           tipo: 'reporte_nuevo',
           titulo: 'Nuevo avistamiento',
-          subtitulo: `${nombre} · ${r.descripcion?.slice(0, 60) || 'Sin descripción'}`,
+          subtitulo: `${nombre} · ${r.description?.slice(0, 60) || 'Sin descripción'}`,
           timestamp: r.timestamp,
           urgente: false,
         })
@@ -116,8 +116,8 @@ export function useFeedNotificaciones() {
         id: `c-${c.id}`,
         tipo: 'caso_nuevo',
         titulo: 'Caso registrado',
-        subtitulo: `${c.desaparecido.nombre} · ${c.agentes_asignados.length} agente${c.agentes_asignados.length !== 1 ? 's' : ''} asignado${c.agentes_asignados.length !== 1 ? 's' : ''}`,
-        timestamp: c.fecha_creacion,
+        subtitulo: `${c.missing_person.name} · ${c.assigned_agents.length} agente${c.assigned_agents.length !== 1 ? 's' : ''} asignado${c.assigned_agents.length !== 1 ? 's' : ''}`,
+        timestamp: c.created_at,
         urgente: false,
       })
     }

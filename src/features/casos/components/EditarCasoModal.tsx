@@ -102,49 +102,44 @@ interface Props {
 export function EditarCasoModal({ caso, onClose }: Props) {
   const mutation = useEditarCasoMutation()
 
-  // Campos editables
-  const [nombre, setNombre] = useState(caso.desaparecido.nombre)
-  const [descripcion, setDescripcion] = useState(caso.desaparecido.descripcion)
-  const [edad, setEdad] = useState(String(caso.desaparecido.edad))
+  const [nombre, setNombre] = useState(caso.missing_person.name)
+  const [descripcion, setDescripcion] = useState(caso.missing_person.description)
+  const [edad, setEdad] = useState(String(caso.missing_person.age))
   const [fechaUltimaVez, setFechaUltimaVez] = useState(
-    caso.desaparecido.fecha_ultima_vez_visto?.slice(0, 10) ?? '',
+    caso.missing_person.last_seen_date?.slice(0, 10) ?? '',
   )
-  const [repNombre, setRepNombre] = useState(caso.representante_externo.nombre)
-  const [repEmail, setRepEmail] = useState(caso.representante_externo.email)
-  const [repTelefono, setRepTelefono] = useState(caso.representante_externo.telefono)
+  const [repNombre, setRepNombre] = useState(caso.external_contact.name)
+  const [repEmail, setRepEmail] = useState(caso.external_contact.email)
+  const [repTelefono, setRepTelefono] = useState(caso.external_contact.phone)
 
-  // Última ubicación oficial
   const [ultimaUbicacion, setUltimaUbicacion] = useState<Ubicacion>(
-    caso.desaparecido.ultima_ubicacion_oficial,
+    caso.missing_person.last_known_location,
   )
   const [descripcionUbicacion, setDescripcionUbicacion] = useState(
-    caso.desaparecido.descripcion_ubicacion,
+    caso.missing_person.location_description,
   )
 
-  // Mapa de la ubicación seleccionada
   const coordsMapa = {
     lat: ultimaUbicacion.coordinates[1],
     lng: ultimaUbicacion.coordinates[0],
   }
 
-  // Traer reportes prioritarios del caso
   const { data: reportesData } = useQuery({
     queryKey: ['reportes-caso-prioritarios', caso.id],
-    queryFn: () => reportesService.listar({ caso_id: caso.id, limit: 100 }),
+    queryFn: () => reportesService.listar({ case_id: caso.id, limit: 100 }),
   })
 
-  const reportesPrioritarios = (reportesData?.data ?? []).filter((r) => r.prioridad_policial)
+  const reportesPrioritarios = (reportesData?.data ?? []).filter((r) => r.police_priority)
 
-  // Construir opciones del dropdown
   const opcionesUbicacion: UbicacionOpcion[] = [
     {
       label: 'Ubicación original del caso',
-      descripcion: caso.desaparecido.descripcion_ubicacion || 'Sin descripción',
-      ubicacion: caso.desaparecido.ultima_ubicacion_oficial,
+      descripcion: caso.missing_person.location_description || 'Sin descripción',
+      ubicacion: caso.missing_person.last_known_location,
     },
     ...reportesPrioritarios.map((r, i) => ({
       label: `Reporte prioritario #${i + 1}`,
-      descripcion: r.descripcion || `${r.location.coordinates[1].toFixed(5)}, ${r.location.coordinates[0].toFixed(5)}`,
+      descripcion: r.description || `${r.location.coordinates[1].toFixed(5)}, ${r.location.coordinates[0].toFixed(5)}`,
       ubicacion: r.location,
     })),
   ]
@@ -155,18 +150,18 @@ export function EditarCasoModal({ caso, onClose }: Props) {
       {
         id: caso.id,
         payload: {
-          desaparecido: {
-            nombre: nombre.trim(),
-            descripcion: descripcion.trim(),
-            edad: parseInt(edad) || 0,
-            fecha_ultima_vez_visto: fechaUltimaVez,
-            descripcion_ubicacion: descripcionUbicacion,
-            ultima_ubicacion_oficial: ultimaUbicacion,
+          missing_person: {
+            name: nombre.trim(),
+            description: descripcion.trim(),
+            age: parseInt(edad) || 0,
+            last_seen_date: fechaUltimaVez,
+            location_description: descripcionUbicacion,
+            last_known_location: ultimaUbicacion,
           },
-          representante_externo: {
-            nombre: repNombre.trim(),
+          external_contact: {
+            name: repNombre.trim(),
             email: repEmail.trim(),
-            telefono: repTelefono.trim(),
+            phone: repTelefono.trim(),
           },
         },
       },
@@ -177,11 +172,10 @@ export function EditarCasoModal({ caso, onClose }: Props) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-bg-panel border border-border-soft rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-soft sticky top-0 bg-bg-panel z-10">
           <div>
             <h2 className="text-text-primary font-semibold">Editar caso</h2>
-            <p className="text-text-muted text-xs mt-0.5">{caso.desaparecido.nombre}</p>
+            <p className="text-text-muted text-xs mt-0.5">{caso.missing_person.name}</p>
           </div>
           <button
             onClick={onClose}
@@ -192,7 +186,6 @@ export function EditarCasoModal({ caso, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-6">
-          {/* Datos del desaparecido */}
           <section>
             <h3 className="text-text-secondary text-xs font-semibold uppercase tracking-widest mb-4">
               Datos del desaparecido
@@ -245,7 +238,6 @@ export function EditarCasoModal({ caso, onClose }: Props) {
             </div>
           </section>
 
-          {/* Representante externo */}
           <section>
             <h3 className="text-text-secondary text-xs font-semibold uppercase tracking-widest mb-1">
               Representante externo
@@ -282,7 +274,6 @@ export function EditarCasoModal({ caso, onClose }: Props) {
             </div>
           </section>
 
-          {/* Última ubicación oficial */}
           <section>
             <h3 className="text-text-secondary text-xs font-semibold uppercase tracking-widest mb-1">
               Última ubicación oficial
@@ -303,7 +294,6 @@ export function EditarCasoModal({ caso, onClose }: Props) {
               }}
             />
 
-            {/* Mapa de la ubicación seleccionada */}
             <div className="mt-3 h-48 rounded-lg overflow-hidden border border-border-soft">
               <Map
                 defaultCenter={coordsMapa}
@@ -328,7 +318,6 @@ export function EditarCasoModal({ caso, onClose }: Props) {
             </p>
           )}
 
-          {/* Footer */}
           <div className="flex items-center justify-end gap-3 pt-2 border-t border-border-soft">
             <button
               type="button"

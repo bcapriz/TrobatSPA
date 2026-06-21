@@ -7,8 +7,8 @@ export function useActualizarEstadoCasoMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, estado }: { id: string; estado: EstadoCaso }) =>
-      casosService.actualizarEstado(id, estado),
+    mutationFn: ({ id, status }: { id: string; status: EstadoCaso }) =>
+      casosService.actualizarEstado(id, status),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [CASOS_QUERY_KEY] })
       void queryClient.invalidateQueries({ queryKey: ['dashboard-casos'] })

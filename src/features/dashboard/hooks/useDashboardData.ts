@@ -18,23 +18,20 @@ export function useDashboardData() {
   const casos = casosQuery.data?.data ?? []
   const reportes = reportesQuery.data?.data ?? []
 
-  const casosActivos = casos.filter(
-    (c) => c.estado === 'investigacion_activa' || c.estado === 'suspendido',
-  ).length
+  const casosActivos = casos.filter((c) => c.status === 'active_investigation').length
 
-  const reportesPendientes = reportes.filter((r) => !r.validado).length
-  const reportesPrioritarios = reportes.filter((r) => r.prioridad_policial).length
-  const agentesUnicos = new Set(casos.flatMap((c) => c.agentes_asignados)).size
+  const reportesPendientes = reportes.filter((r) => !r.validated).length
+  const reportesPrioritarios = reportes.filter((r) => r.police_priority).length
+  const agentesUnicos = new Set(casos.flatMap((c) => c.assigned_agents)).size
 
   const estadosCount = {
-    investigacion_activa: casos.filter((c) => c.estado === 'investigacion_activa').length,
-    suspendido: casos.filter((c) => c.estado === 'suspendido').length,
-    resuelto: casos.filter((c) => c.estado === 'resuelto').length,
-    cerrado: casos.filter((c) => c.estado === 'cerrado').length,
+    active_investigation: casos.filter((c) => c.status === 'active_investigation').length,
+    resolved: casos.filter((c) => c.status === 'resolved').length,
+    closed: casos.filter((c) => c.status === 'closed').length,
   }
 
   const casosRecientes = [...casos]
-    .sort((a, b) => new Date(b.fecha_creacion).getTime() - new Date(a.fecha_creacion).getTime())
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 5)
 
   const reportesRecientes = [...reportes]
@@ -42,7 +39,7 @@ export function useDashboardData() {
     .slice(0, 6)
 
   const alertasActivas = reportes
-    .filter((r) => r.prioridad_policial && !r.validado)
+    .filter((r) => r.police_priority && !r.validated)
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, 5)
 

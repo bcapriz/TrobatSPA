@@ -10,14 +10,12 @@ const QUERY_KEYS = [
   ['reportes-caso'],
 ] as const
 
-/** Llama al endpoint pero no falla si devuelve 404 (endpoint aún no implementado en el backend) */
-async function safePriorizar(id: string, prioridad_policial: boolean) {
+async function safePriorizar(id: string, police_priority: boolean) {
   try {
-    await reportesService.priorizar(id, { prioridad_policial })
+    await reportesService.priorizar(id, { police_priority })
   } catch (err: unknown) {
     const status = (err as { response?: { status?: number } })?.response?.status
     if (status !== 404) throw err
-    // 404 → endpoint todavía no existe, ignorar silenciosamente
   }
 }
 
@@ -36,16 +34,15 @@ export function useAsignarPrioridadMutation() {
       payload,
     }: {
       id: string
-      payload: { prioridad_policial: boolean; validado?: boolean }
+      payload: { police_priority: boolean; validated?: boolean }
     }) => {
-      await safePriorizar(id, payload.prioridad_policial)
+      await safePriorizar(id, payload.police_priority)
 
-      if (payload.validado !== undefined) {
-        await reportesService.validar(id, { validado: payload.validado })
+      if (payload.validated !== undefined) {
+        await reportesService.validar(id, { validated: payload.validated })
       }
     },
 
-    // Actualización optimista: tocar el cache antes de que responda el backend
     onMutate: async ({ id, payload }) => {
       await queryClient.cancelQueries({ queryKey: ['reportes-bandeja'] })
 
@@ -59,8 +56,8 @@ export function useAsignarPrioridadMutation() {
             if (r.id !== id) return r
             return {
               ...r,
-              prioridad_policial: payload.prioridad_policial,
-              ...(payload.validado !== undefined ? { validado: payload.validado } : {}),
+              police_priority: payload.police_priority,
+              ...(payload.validated !== undefined ? { validated: payload.validated } : {}),
             }
           }),
         }
@@ -69,7 +66,6 @@ export function useAsignarPrioridadMutation() {
       return { previous }
     },
 
-    // Si el backend falla (y no es 404 de prioridad), revertir
     onError: (_err, _vars, context) => {
       if (context?.previous) {
         queryClient.setQueryData(['reportes-bandeja'], context.previous)

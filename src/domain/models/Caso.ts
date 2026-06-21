@@ -1,38 +1,38 @@
 import type { Ubicacion } from './Ubicacion'
 
-export type EstadoCaso = 'investigacion_activa' | 'resuelto' | 'cerrado' | 'suspendido'
+export type EstadoCaso = 'active_investigation' | 'resolved' | 'closed'
 
 export interface DesaparecidoInfo {
-  nombre: string
-  descripcion: string
-  edad: number
-  fecha_ultima_vez_visto: string
-  descripcion_ubicacion: string
-  ultima_ubicacion_oficial: Ubicacion
+  name: string
+  description: string
+  age: number
+  last_seen_date: string
+  location_description: string
+  last_known_location: Ubicacion
+  location_label?: string
+  image?: string
 }
 
 export interface RepresentanteExterno {
-  nombre: string
+  name: string
   email: string
-  telefono: string
+  phone: string
 }
 
 export interface Caso {
   id: string
-  oficial_administrador_id: string
-  agentes_asignados: string[]
-  desaparecido: DesaparecidoInfo
-  representante_externo: RepresentanteExterno
-  estado: EstadoCaso
-  total_reportes: number
-  fecha_creacion: string
-  foto_url?: string
+  admin_officer_id: string
+  assigned_agents: string[]
+  missing_person: DesaparecidoInfo
+  external_contact: RepresentanteExterno
+  status: EstadoCaso
+  total_reports: number
+  created_at: string
 }
 
 export interface CrearCasoPayload {
-  oficial_administrador_id: string
-  agentes_asignados: string[]
-  desaparecido: DesaparecidoInfo
-  representante_externo: RepresentanteExterno
-  foto_url: string
+  admin_officer_id: string
+  assigned_agents: string[]
+  missing_person: DesaparecidoInfo
+  external_contact: RepresentanteExterno
 }

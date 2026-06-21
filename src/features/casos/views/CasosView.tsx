@@ -40,23 +40,23 @@ export function CasosView() {
     let filtered = todos
 
     if (tab === 'activos') {
-      filtered = filtered.filter((c) => c.estado === 'investigacion_activa' || c.estado === 'suspendido')
+      filtered = filtered.filter((c) => c.status === 'active_investigation')
     } else if (tab === 'cerrados') {
-      filtered = filtered.filter((c) => c.estado === 'resuelto' || c.estado === 'cerrado')
+      filtered = filtered.filter((c) => c.status === 'resolved' || c.status === 'closed')
     } else if (tab === 'mas_recientes') {
-      filtered = filtered.sort((a, b) => new Date(b.fecha_creacion).getTime() - new Date(a.fecha_creacion).getTime())
+      filtered = filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     }
 
     // Aplicar búsqueda
     return filtered.filter(
       (c) =>
         !busqueda.trim() ||
-        c.desaparecido.nombre.toLowerCase().includes(busqueda.toLowerCase())
+        c.missing_person.name.toLowerCase().includes(busqueda.toLowerCase())
     )
   }, [queryData, tab, busqueda])
 
   const totalActivos = useMemo(
-    () => (queryData?.data ?? []).filter((c) => c.estado === 'investigacion_activa').length,
+    () => (queryData?.data ?? []).filter((c) => c.status === 'active_investigation').length,
     [queryData],
   )
 
@@ -67,7 +67,7 @@ export function CasosView() {
   ]
 
   const handleReactivar = (caso: Caso) => {
-    actualizarEstadoCaso.mutate({ id: caso.id, estado: 'investigacion_activa' })
+    actualizarEstadoCaso.mutate({ id: caso.id, status: 'active_investigation' })
   }
 
   return (

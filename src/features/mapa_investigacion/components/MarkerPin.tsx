@@ -7,8 +7,8 @@ const COLORS = {
 }
 
 function getColor(reporte: Reporte): string {
-  if (reporte.prioridad_policial) return COLORS.priority
-  if (reporte.validado) return COLORS.validated
+  if (reporte.police_priority) return COLORS.priority
+  if (reporte.validated) return COLORS.validated
   return COLORS.pending
 }
 

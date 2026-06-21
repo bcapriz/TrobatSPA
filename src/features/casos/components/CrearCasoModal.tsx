@@ -132,28 +132,28 @@ export function CrearCasoModal({ onClose }: Props) {
     }
     setIsUploading(false)
 
-    const ultima_ubicacion_oficial: Ubicacion = {
+    const last_known_location: Ubicacion = {
       type: 'Point',
       coordinates: [coordenadas.lng, coordenadas.lat],
     }
 
     mutation.mutate(
       {
-        oficial_administrador_id: oficialId,
-        agentes_asignados: [],
-        foto_url: fotoUrl,
-        desaparecido: {
-          nombre: form.nombre.trim(),
-          descripcion: form.descripcion.trim(),
-          edad: parseInt(form.edad) || 0,
-          fecha_ultima_vez_visto: form.fecha_ultima_vez_visto,
-          descripcion_ubicacion: addressInputRef.current?.value.trim() ?? '',
-          ultima_ubicacion_oficial,
+        admin_officer_id: oficialId,
+        assigned_agents: [],
+        missing_person: {
+          name: form.nombre.trim(),
+          description: form.descripcion.trim(),
+          age: parseInt(form.edad) || 0,
+          last_seen_date: form.fecha_ultima_vez_visto,
+          location_description: addressInputRef.current?.value.trim() ?? '',
+          last_known_location,
+          image: fotoUrl,
         },
-        representante_externo: {
-          nombre: form.repNombre.trim(),
+        external_contact: {
+          name: form.repNombre.trim(),
           email: form.repEmail.trim(),
-          telefono: form.repTelefono.trim(),
+          phone: form.repTelefono.trim(),
         },
       },
       {

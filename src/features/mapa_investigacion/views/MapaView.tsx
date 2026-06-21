@@ -31,24 +31,24 @@ export function MapaView() {
   const casos = useMemo(() => {
     // Excluir reportes de casos cerrados
     const allCasos = (casosData?.data ?? []).filter(
-      (c) => c.estado !== 'cerrado'
+      (c) => c.status === 'active_investigation'
     )
-    
+
     // Filtrar por búsqueda
     const filtered = searchCaso.trim()
       ? allCasos.filter((c) =>
-          c.desaparecido.nombre.toLowerCase().includes(searchCaso.toLowerCase())
+          c.missing_person.name.toLowerCase().includes(searchCaso.toLowerCase())
         )
       : allCasos
-    
+
     // Ordenar por fecha más reciente y limitar a 4
     return filtered
-      .sort((a, b) => new Date(b.fecha_creacion).getTime() - new Date(a.fecha_creacion).getTime())
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 4)
   }, [casosData, searchCaso])
 
   const casoNombres = useMemo(
-    () => Object.fromEntries((casosData?.data ?? []).map((c) => [c.id, c.desaparecido.nombre])),
+    () => Object.fromEntries((casosData?.data ?? []).map((c) => [c.id, c.missing_person.name])),
     [casosData],
   )
 
@@ -57,24 +57,24 @@ export function MapaView() {
     // Excluir reportes de casos cerrados
     const casosActivosIds = new Set(
       (casosData?.data ?? [])
-        .filter((c) => c.estado !== 'cerrado')
+        .filter((c) => c.status === 'active_investigation')
         .map((c) => c.id)
     )
 
     let result = (reportesData?.data ?? []).filter(
-      (r) => casosActivosIds.has(r.caso_id)
+      (r) => casosActivosIds.has(r.case_id)
     )
 
     if (soloPrioridad) {
-      result = result.filter((r) => r.prioridad_policial)
+      result = result.filter((r) => r.police_priority)
     }
 
     if (soloValidados) {
-      result = result.filter((r) => r.validado)
+      result = result.filter((r) => r.validated)
     }
 
     if (soloPendientes) {
-      result = result.filter((r) => !r.validado)
+      result = result.filter((r) => !r.validated)
     }
 
     return [...result].sort((a, b) => {
@@ -136,7 +136,7 @@ export function MapaView() {
                 : 'text-text-secondary border-border-soft hover:border-border-hard hover:text-text-primary'
             }`}
           >
-            {caso.desaparecido.nombre}
+            {caso.missing_person.name}
           </button>
         ))}
 
@@ -225,7 +225,7 @@ export function MapaView() {
                     key={reporte.id}
                     position={{ lat, lng }}
                     onClick={() => handleMarkerClick(reporte)}
-                    zIndex={reporte.prioridad_policial ? 10 : 1}
+                    zIndex={reporte.police_priority ? 10 : 1}
                   >
                     <MarkerPin reporte={reporte} />
                   </AdvancedMarker>
@@ -240,7 +240,7 @@ export function MapaView() {
           {selectedReporte ? (
             <ReportePanel
               reporte={selectedReporte}
-              casoNombre={casoNombres[selectedReporte.caso_id] ?? 'Caso desconocido'}
+              casoNombre={casoNombres[selectedReporte.case_id] ?? 'Caso desconocido'}
               onClose={() => setSelectedReporte(null)}
             />
           ) : (

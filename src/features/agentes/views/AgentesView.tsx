@@ -19,17 +19,15 @@ function getInitials(nombre: string): string {
 }
 
 const ESTADO_LABEL: Record<EstadoCaso, string> = {
-  investigacion_activa: 'Activa',
-  suspendido: 'Suspendido',
-  resuelto: 'Resuelto',
-  cerrado: 'Cerrado',
+  active_investigation: 'Activa',
+  resolved: 'Resuelto',
+  closed: 'Cerrado',
 }
 
 const ESTADO_COLOR: Record<EstadoCaso, string> = {
-  investigacion_activa: 'text-brand-base bg-brand-base/15 border-brand-base/25',
-  suspendido: 'text-yellow-400 bg-yellow-500/15 border-yellow-500/25',
-  resuelto: 'text-priority-low bg-priority-low/15 border-priority-low/25',
-  cerrado: 'text-text-muted bg-bg-hover border-border-soft',
+  active_investigation: 'text-brand-base bg-brand-base/15 border-brand-base/25',
+  resolved: 'text-priority-low bg-priority-low/15 border-priority-low/25',
+  closed: 'text-text-muted bg-bg-hover border-border-soft',
 }
 
 // ─── detail panel ─────────────────────────────────────────────────────────────
@@ -124,13 +122,13 @@ function DetailPanel({ agente, isSelf, casosAdmin, casosColaborador, onClose }: 
                   <div className="flex items-center gap-2 min-w-0">
                     <FolderOpen size={12} className="text-brand-base flex-shrink-0" />
                     <span className="text-text-primary text-xs truncate">
-                      {c.desaparecido.nombre}
+                      {c.missing_person.name}
                     </span>
                   </div>
                   <span
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${ESTADO_COLOR[c.estado]}`}
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${ESTADO_COLOR[c.status]}`}
                   >
-                    {ESTADO_LABEL[c.estado]}
+                    {ESTADO_LABEL[c.status]}
                   </span>
                 </button>
               ))}
@@ -156,13 +154,13 @@ function DetailPanel({ agente, isSelf, casosAdmin, casosColaborador, onClose }: 
                   <div className="flex items-center gap-2 min-w-0">
                     <FolderOpen size={12} className="text-text-secondary flex-shrink-0" />
                     <span className="text-text-primary text-xs truncate">
-                      {c.desaparecido.nombre}
+                      {c.missing_person.name}
                     </span>
                   </div>
                   <span
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${ESTADO_COLOR[c.estado]}`}
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${ESTADO_COLOR[c.status]}`}
                   >
-                    {ESTADO_LABEL[c.estado]}
+                    {ESTADO_LABEL[c.status]}
                   </span>
                 </button>
               ))}
@@ -280,9 +278,9 @@ export function AgentesView() {
   const casosCountMap = useMemo(() => {
     const map: Record<string, number> = {}
     for (const c of casos) {
-      map[c.oficial_administrador_id] = (map[c.oficial_administrador_id] ?? 0) + 1
-      for (const aid of c.agentes_asignados) {
-        if (aid !== c.oficial_administrador_id) {
+      map[c.admin_officer_id] = (map[c.admin_officer_id] ?? 0) + 1
+      for (const aid of c.assigned_agents) {
+        if (aid !== c.admin_officer_id) {
           map[aid] = (map[aid] ?? 0) + 1
         }
       }
@@ -307,7 +305,7 @@ export function AgentesView() {
   // Cases for the selected agent
   const casosAdmin = useMemo(
     () => ({
-      data: casos.filter((c) => c.oficial_administrador_id === selectedId),
+      data: casos.filter((c) => c.admin_officer_id === selectedId),
       total: 0, page: 0, limit: 100, hasMore: false,
     }),
     [casos, selectedId],
@@ -316,8 +314,8 @@ export function AgentesView() {
     () => ({
       data: casos.filter(
         (c) =>
-          c.agentes_asignados.includes(selectedId ?? '') &&
-          c.oficial_administrador_id !== selectedId,
+          c.assigned_agents.includes(selectedId ?? '') &&
+          c.admin_officer_id !== selectedId,
       ),
       total: 0, page: 0, limit: 100, hasMore: false,
     }),

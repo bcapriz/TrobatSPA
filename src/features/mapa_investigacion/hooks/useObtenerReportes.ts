@@ -12,7 +12,7 @@ export function useObtenerReportes() {
     queryFn: () =>
       reportesService.listar({
         limit: 200,
-        ...(casoIdFiltro ? { caso_id: casoIdFiltro } : {}),
+        ...(casoIdFiltro ? { case_id: casoIdFiltro } : {}),
       }),
     refetchInterval: 30_000,
   })
