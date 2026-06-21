@@ -99,7 +99,6 @@ export function CrearCasoModal({ onClose }: Props) {
     setFotoFile(file)
     setFotoPreview(URL.createObjectURL(file))
     setFotoError(false)
-    setUploadError(false)
   }
 
   const handleSubmit = (e: FormEvent) => {

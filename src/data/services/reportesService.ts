@@ -16,14 +16,30 @@ export interface ListarReportesResponse {
 }
 
 export const reportesService = {
-  listar: (params: ListarReportesFiltros = {}) =>
-    apiClient.get<ListarReportesResponse>('/reportes', { params }).then((r) => r.data),
+  listar: async (params: ListarReportesFiltros = {}) => {
+    try {
+      const r = await apiClient.get<ListarReportesResponse>('/reportes', { params })
+      return r.data
+    } catch (error) {
+      throw error
+    }
+  },
 
-  validar: (id: string, payload: ValidarReportePayload) =>
-    apiClient.patch<{ message: string }>(`/reportes/${id}/validar`, payload).then((r) => r.data),
+  validar: async (id: string, payload: ValidarReportePayload) => {
+    try {
+      const r = await apiClient.patch<{ message: string }>(`/reportes/${id}/validar`, payload)
+      return r.data
+    } catch (error) {
+      throw error
+    }
+  },
 
-  priorizar: (id: string, payload: PriorizarReportePayload) =>
-    apiClient
-      .patch<{ message: string }>(`/reportes/${id}/prioridad`, payload)
-      .then((r) => r.data),
+  priorizar: async (id: string, payload: PriorizarReportePayload) => {
+    try {
+      const r = await apiClient.patch<{ message: string }>(`/reportes/${id}/prioridad`, payload)
+      return r.data
+    } catch (error) {
+      throw error
+    }
+  },
 }

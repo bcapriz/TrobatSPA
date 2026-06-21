@@ -8,7 +8,7 @@ export interface DesaparecidoInfo {
   age: number
   last_seen_date: string
   location_description: string
-  last_known_location: Ubicacion
+  last_known_location?: Ubicacion | null
   location_label?: string
   image?: string
 }

@@ -31,34 +31,69 @@ export interface EditarCasoPayload {
 }
 
 export const casosService = {
-  listar: (filtros: ListarCasosFiltros = {}) =>
-    apiClient.get<ListarCasosResponse>('/casos', { params: filtros }).then((r) => r.data),
-
-  obtener: (id: string) =>
-    apiClient.get<Caso>(`/casos/${id}`).then((r) => r.data),
-
-  crear: ({ payload, foto }: { payload: CrearCasoPayload; foto: File }) => {
-    const formData = new FormData()
-    formData.append('datos', JSON.stringify(payload))
-    formData.append('foto', foto)
-    return apiClient.post<{ id: string; message: string }>('/casos', formData).then((r) => r.data)
+  listar: async (filtros: ListarCasosFiltros = {}) => {
+    try {
+      const r = await apiClient.get<ListarCasosResponse>('/casos', { params: filtros })
+      return r.data
+    } catch (error) {
+      throw error
+    }
   },
 
-  actualizarEstado: (id: string, status: EstadoCaso) =>
-    apiClient
-      .patch<{ message: string }>(`/casos/${id}/estado`, { status })
-      .then((r) => r.data),
+  obtener: async (id: string) => {
+    try {
+      const r = await apiClient.get<Caso>(`/casos/${id}`)
+      return r.data
+    } catch (error) {
+      throw error
+    }
+  },
 
-  editar: (id: string, payload: EditarCasoPayload) =>
-    apiClient.patch<{ message: string }>(`/casos/${id}`, payload).then((r) => r.data),
+  crear: async ({ payload, foto }: { payload: CrearCasoPayload; foto: File }) => {
+    try {
+      const formData = new FormData()
+      formData.append('datos', JSON.stringify(payload))
+      formData.append('foto', foto)
+      const r = await apiClient.post<{ id: string; message: string }>('/casos', formData)
+      return r.data
+    } catch (error) {
+      throw error
+    }
+  },
 
-  asignarAgente: (casoId: string, agenteId: string) =>
-    apiClient
-      .post<{ message: string }>(`/casos/${casoId}/agentes/${agenteId}`)
-      .then((r) => r.data),
+  actualizarEstado: async (id: string, status: EstadoCaso) => {
+    try {
+      const r = await apiClient.patch<{ message: string }>(`/casos/${id}/estado`, { status })
+      return r.data
+    } catch (error) {
+      throw error
+    }
+  },
 
-  removerAgente: (casoId: string, agenteId: string) =>
-    apiClient
-      .delete<{ message: string }>(`/casos/${casoId}/agentes/${agenteId}`)
-      .then((r) => r.data),
+  editar: async (id: string, payload: EditarCasoPayload) => {
+    try {
+      const r = await apiClient.patch<{ message: string }>(`/casos/${id}`, payload)
+      return r.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  asignarAgente: async (casoId: string, agenteId: string) => {
+    try {
+      const r = await apiClient.post<{ message: string }>(`/casos/${casoId}/agentes/${agenteId}`)
+      return r.data
+    } catch (error) {
+      throw error
+    }
+  },
+
+  removerAgente: async (casoId: string, agenteId: string) => {
+    try {
+      const r = await apiClient.delete<{ message: string }>(`/casos/${casoId}/agentes/${agenteId}`)
+      return r.data
+    } catch (error) {
+      throw error
+    }
+  },
 }

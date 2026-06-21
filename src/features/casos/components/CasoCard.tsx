@@ -100,7 +100,7 @@ interface CasoCardProps {
 
 export function CasoCard({ caso, onAsignar, onReactivar, onEditar }: CasoCardProps) {
   const { missing_person, status, total_reports, assigned_agents, created_at } = caso
-  const pill = ESTADO_PILL[status]
+  const pill = ESTADO_PILL[status] ?? { bg: 'bg-border-hard/30 text-text-muted border-border-hard', label: status }
   const initials = missing_person.name
     .split(' ')
     .slice(0, 2)
@@ -110,7 +110,7 @@ export function CasoCard({ caso, onAsignar, onReactivar, onEditar }: CasoCardPro
 
   return (
     <div
-      className={`bg-bg-panel border border-border-soft border-l-4 ${ESTADO_BORDER[status]} rounded-xl p-4 flex items-center gap-4 hover:border-border-hard transition-colors`}
+      className={`bg-bg-panel border border-border-soft border-l-4 ${ESTADO_BORDER[status] ?? 'border-l-border-hard'} rounded-xl p-4 flex items-center gap-4 hover:border-border-hard transition-colors`}
     >
       <div
         className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${

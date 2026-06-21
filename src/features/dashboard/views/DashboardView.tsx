@@ -77,7 +77,7 @@ function StatCard({ label, value, Icon, iconColor, note }: StatCardProps) {
 }
 
 function EstadoBadge({ estado }: { estado: EstadoCaso }) {
-  const meta = ESTADO_META[estado]
+  const meta = ESTADO_META[estado] ?? { label: String(estado), bg: 'bg-border-soft', text: 'text-text-muted', bar: 'bg-text-muted' }
   return (
     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.bg} ${meta.text}`}>
       {meta.label}

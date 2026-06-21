@@ -3,6 +3,8 @@ import { X, MapPin, ChevronDown, Check } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps'
 import type { Caso, Ubicacion } from '../../../domain/models'
+
+const FALLBACK_UBICACION: Ubicacion = { type: 'Point', coordinates: [0, 0] }
 import { reportesService } from '../../../data/services/reportesService'
 import { useEditarCasoMutation } from '../hooks/useEditarCasoMutation'
 
@@ -113,7 +115,7 @@ export function EditarCasoModal({ caso, onClose }: Props) {
   const [repTelefono, setRepTelefono] = useState(caso.external_contact.phone)
 
   const [ultimaUbicacion, setUltimaUbicacion] = useState<Ubicacion>(
-    caso.missing_person.last_known_location,
+    caso.missing_person.last_known_location ?? FALLBACK_UBICACION,
   )
   const [descripcionUbicacion, setDescripcionUbicacion] = useState(
     caso.missing_person.location_description,
@@ -135,7 +137,7 @@ export function EditarCasoModal({ caso, onClose }: Props) {
     {
       label: 'Ubicación original del caso',
       descripcion: caso.missing_person.location_description || 'Sin descripción',
-      ubicacion: caso.missing_person.last_known_location,
+      ubicacion: caso.missing_person.last_known_location ?? FALLBACK_UBICACION,
     },
     ...reportesPrioritarios.map((r, i) => ({
       label: `Reporte prioritario #${i + 1}`,

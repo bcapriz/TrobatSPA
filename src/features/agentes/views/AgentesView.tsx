@@ -30,6 +30,9 @@ const ESTADO_COLOR: Record<EstadoCaso, string> = {
   closed: 'text-text-muted bg-bg-hover border-border-soft',
 }
 
+const getEstadoColor = (s: string) => ESTADO_COLOR[s as EstadoCaso] ?? 'text-text-muted bg-bg-hover border-border-soft'
+const getEstadoLabel = (s: string) => ESTADO_LABEL[s as EstadoCaso] ?? s
+
 // ─── detail panel ─────────────────────────────────────────────────────────────
 
 interface DetailPanelProps {
@@ -126,9 +129,9 @@ function DetailPanel({ agente, isSelf, casosAdmin, casosColaborador, onClose }: 
                     </span>
                   </div>
                   <span
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${ESTADO_COLOR[c.status]}`}
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${getEstadoColor(c.status)}`}
                   >
-                    {ESTADO_LABEL[c.status]}
+                    {getEstadoLabel(c.status)}
                   </span>
                 </button>
               ))}
@@ -158,9 +161,9 @@ function DetailPanel({ agente, isSelf, casosAdmin, casosColaborador, onClose }: 
                     </span>
                   </div>
                   <span
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${ESTADO_COLOR[c.status]}`}
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${getEstadoColor(c.status)}`}
                   >
-                    {ESTADO_LABEL[c.status]}
+                    {getEstadoLabel(c.status)}
                   </span>
                 </button>
               ))}
