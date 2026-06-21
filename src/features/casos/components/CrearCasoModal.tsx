@@ -1,9 +1,11 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
-import { X, MapPin } from 'lucide-react'
+import { X, MapPin, Upload } from 'lucide-react'
 import { Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 import type { Ubicacion } from '../../../domain/models'
 import { useAuthStore } from '../../../core/stores/authStore'
 import { useCrearCasoMutation } from '../hooks/useCrearCasoMutation'
+import { subirFotoCaso } from '../../../data/services/storageService'
+import { useToast } from '../../../shared/components/Toast'
 
 const MAPS_MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || 'DEMO_MAP_ID'
 
@@ -50,10 +52,18 @@ export function CrearCasoModal({ onClose }: Props) {
   const [form, setForm] = useState<FormData>(INITIAL)
   const [coordenadas, setCoordenadas] = useState<{ lat: number; lng: number } | null>(null)
   const [coordError, setCoordError] = useState(false)
+  const [fotoFile, setFotoFile] = useState<File | null>(null)
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null)
+  const [fotoError, setFotoError] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState(false)
+
   const addressInputRef = useRef<HTMLInputElement>(null)
+  const fotoInputRef = useRef<HTMLInputElement>(null)
   const placesLib = useMapsLibrary('places')
   const oficialId = useAuthStore((s) => s.usuario?.id ?? '')
   const mutation = useCrearCasoMutation()
+  const { showToast } = useToast()
 
   useEffect(() => {
     if (!placesLib || !addressInputRef.current) return
@@ -75,18 +85,52 @@ export function CrearCasoModal({ onClose }: Props) {
     return () => google.maps.event.removeListener(listener)
   }, [placesLib])
 
+  useEffect(() => {
+    return () => {
+      if (fotoPreview) URL.revokeObjectURL(fotoPreview)
+    }
+  }, [fotoPreview])
+
   const set =
     (field: keyof FormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }))
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFotoFile(file)
+    setFotoPreview(URL.createObjectURL(file))
+    setFotoError(false)
+    setUploadError(false)
+  }
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+
+    if (!fotoFile) {
+      setFotoError(true)
+      return
+    }
+
     if (!coordenadas) {
       setCoordError(true)
       addressInputRef.current?.focus()
       return
     }
+
+    setIsUploading(true)
+    setUploadError(false)
+
+    let fotoUrl: string
+    try {
+      fotoUrl = await subirFotoCaso(fotoFile)
+    } catch {
+      setUploadError(true)
+      setIsUploading(false)
+      return
+    }
+    setIsUploading(false)
 
     const ultima_ubicacion_oficial: Ubicacion = {
       type: 'Point',
@@ -97,6 +141,7 @@ export function CrearCasoModal({ onClose }: Props) {
       {
         oficial_administrador_id: oficialId,
         agentes_asignados: [],
+        foto_url: fotoUrl,
         desaparecido: {
           nombre: form.nombre.trim(),
           descripcion: form.descripcion.trim(),
@@ -111,9 +156,16 @@ export function CrearCasoModal({ onClose }: Props) {
           telefono: form.repTelefono.trim(),
         },
       },
-      { onSuccess: onClose },
+      {
+        onSuccess: () => {
+          showToast('Caso creado exitosamente.', 'success')
+          onClose()
+        },
+      },
     )
   }
+
+  const isBusy = isUploading || mutation.isPending
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -158,6 +210,68 @@ export function CrearCasoModal({ onClose }: Props) {
                   className={`${inputClass} resize-none`}
                 />
               </div>
+
+              <div className="col-span-2">
+                <label className={labelClass}>
+                  Foto del desaparecido{' '}
+                  <span className="text-priority-high normal-case tracking-normal">
+                    (obligatoria)
+                  </span>
+                </label>
+                <input
+                  ref={fotoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFotoChange}
+                  className="hidden"
+                />
+                {fotoPreview ? (
+                  <div
+                    className={`rounded-lg border overflow-hidden ${fotoError ? 'border-priority-high' : 'border-border-soft'}`}
+                  >
+                    <img
+                      src={fotoPreview}
+                      alt="Vista previa"
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="flex items-center justify-between px-3 py-2 bg-bg-hover">
+                      <span className="text-xs text-text-secondary truncate">{fotoFile?.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => fotoInputRef.current?.click()}
+                        className="text-xs text-brand-base hover:text-brand-dark transition-colors ml-2 shrink-0"
+                      >
+                        Cambiar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fotoInputRef.current?.click()}
+                    className={`w-full rounded-lg border-2 border-dashed px-4 py-8 flex flex-col items-center gap-2 transition-colors hover:border-brand-base hover:bg-bg-hover ${
+                      fotoError ? 'border-priority-high' : 'border-border-hard'
+                    }`}
+                  >
+                    <Upload
+                      size={20}
+                      className={fotoError ? 'text-priority-high' : 'text-text-muted'}
+                    />
+                    <span
+                      className={`text-sm font-medium ${fotoError ? 'text-priority-high' : 'text-text-secondary'}`}
+                    >
+                      Hacé clic para cargar una foto
+                    </span>
+                    <span className="text-xs text-text-muted">PNG, JPG, WEBP</span>
+                  </button>
+                )}
+                {fotoError && !fotoPreview && (
+                  <p className="mt-1.5 text-xs text-priority-high">
+                    Debés cargar una foto del desaparecido para continuar.
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className={labelClass}>Edad</label>
                 <input
@@ -289,6 +403,12 @@ export function CrearCasoModal({ onClose }: Props) {
             </div>
           </section>
 
+          {uploadError && (
+            <p className="text-priority-high text-sm bg-priority-high/10 border border-priority-high/20 rounded-lg px-3 py-2">
+              Error al subir la foto. Verificá tu conexión e intentá nuevamente.
+            </p>
+          )}
+
           {mutation.isError && (
             <p className="text-priority-high text-sm bg-priority-high/10 border border-priority-high/20 rounded-lg px-3 py-2">
               Error al crear el caso. Intente nuevamente.
@@ -299,16 +419,17 @@ export function CrearCasoModal({ onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary border border-border-soft hover:border-border-hard rounded-lg transition-colors"
+              disabled={isBusy}
+              className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary border border-border-soft hover:border-border-hard rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              disabled={mutation.isPending}
+              disabled={isBusy}
               className="px-5 py-2 text-sm font-semibold bg-brand-base hover:bg-brand-dark text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {mutation.isPending ? 'Guardando...' : 'Guardar caso'}
+              {isUploading ? 'Subiendo foto...' : mutation.isPending ? 'Guardando...' : 'Guardar caso'}
             </button>
           </div>
         </form>
