@@ -12,19 +12,14 @@ import {
   Image,
 } from 'lucide-react'
 import { Map, AdvancedMarker } from '@vis.gl/react-google-maps'
-import type { Reporte } from '../../../domain/models'
+import type { Reporte, ReportePriority } from '../../../domain/models'
 import { useReportesBandeja } from '../hooks/useReportesBandeja'
 import { useValidarReporteMutation } from '../../mapa_investigacion/hooks/useValidarReporteMutation'
-import { useAsignarPrioridadMutation } from '../../casos/hooks/useAsignarPrioridadMutation'
 import { useReverseGeocode } from '../../../shared/hooks/useReverseGeocode'
 
 const MAPS_MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || 'DEMO_MAP_ID'
 
-// ─── types ────────────────────────────────────────────────────────────────────
-
 type Tab = 'todos' | 'pendientes' | 'prioritarios' | 'validados'
-
-// ─── helpers ──────────────────────────────────────────────────────────────────
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -46,6 +41,26 @@ function formatFull(iso: string): string {
   })
 }
 
+// ─── priority options ─────────────────────────────────────────────────────────
+
+const PRIORITY_OPTIONS: { value: ReportePriority; label: string; btnClass: string }[] = [
+  { value: 'high', label: 'Alta', btnClass: 'bg-priority-high hover:bg-priority-high/80 text-white' },
+  { value: 'medium', label: 'Media', btnClass: 'bg-priority-low hover:bg-priority-low/80 text-white' },
+  { value: 'discarded', label: 'Descartar', btnClass: 'border border-border-hard text-text-secondary hover:text-text-primary hover:bg-bg-hover' },
+]
+
+const PRIORITY_LABEL: Record<ReportePriority, string> = {
+  high: 'Alta prioridad',
+  medium: 'Media',
+  discarded: 'Descartado',
+}
+
+const PRIORITY_CLASS: Record<ReportePriority, string> = {
+  high: 'text-priority-high bg-priority-high/15 border-priority-high/25',
+  medium: 'text-priority-low bg-priority-low/15 border-priority-low/25',
+  discarded: 'text-text-muted bg-bg-hover border-border-soft',
+}
+
 // ─── detail panel ─────────────────────────────────────────────────────────────
 
 interface DetailPanelProps {
@@ -54,46 +69,21 @@ interface DetailPanelProps {
   onClose: () => void
 }
 
-type ConfirmAction = 'asignarPrioridad' | 'quitarPrioridad' | 'quitarValidacion' | null
-
 function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
-  const validarMutation = useValidarReporteMutation()
-  const prioridadMutation = useAsignarPrioridadMutation()
-  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
+  const mutation = useValidarReporteMutation()
+  const [pickingPriority, setPickingPriority] = useState(false)
+  const [confirmRevert, setConfirmRevert] = useState(false)
   const [lng, lat] = reporte.location.coordinates
   const { data: direccion, isLoading: geocodingLoading } = useReverseGeocode(lat, lng)
 
-  const isPending = validarMutation.isPending || prioridadMutation.isPending
-
-  const handleConfirm = () => {
-    if (!confirmAction) return
-    setConfirmAction(null)
-
-    if (confirmAction === 'asignarPrioridad') {
-      prioridadMutation.mutate({
-        id: reporte.id,
-        payload: { police_priority: true, validated: true },
-      })
-    } else if (confirmAction === 'quitarPrioridad') {
-      prioridadMutation.mutate({ id: reporte.id, payload: { police_priority: false } })
-    } else if (confirmAction === 'quitarValidacion') {
-      validarMutation.mutate(
-        { id: reporte.id, validated: false },
-        {
-          onSuccess: () => {
-            if (reporte.police_priority) {
-              prioridadMutation.mutate({ id: reporte.id, payload: { police_priority: false } })
-            }
-          },
-        },
-      )
-    }
+  const handleValidar = (priority: ReportePriority) => {
+    setPickingPriority(false)
+    mutation.mutate({ id: reporte.id, validated: true, priority })
   }
 
-  const confirmLabels: Record<NonNullable<ConfirmAction>, string> = {
-    asignarPrioridad: 'Asignar prioridad alta y validar automáticamente este reporte',
-    quitarPrioridad: 'Quitar la prioridad alta de este reporte',
-    quitarValidacion: 'Quitar la validación' + (reporte.police_priority ? ' y la prioridad alta' : '') + ' de este reporte',
+  const handleRevertir = () => {
+    setConfirmRevert(false)
+    mutation.mutate({ id: reporte.id, validated: false, priority: null })
   }
 
   return (
@@ -102,7 +92,7 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-soft flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-text-primary font-semibold text-sm">Detalle</span>
-          {reporte.police_priority && (
+          {reporte.priority === 'high' && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-priority-high bg-priority-high/15 border border-priority-high/25 px-1.5 py-0.5 rounded-full">
               <Flag size={9} />
               ALTA
@@ -122,11 +112,7 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
         {reporte.photo_url ? (
           <a href={reporte.photo_url} target="_blank" rel="noreferrer" className="block">
             <div className="w-full h-52 bg-bg-hover overflow-hidden hover:opacity-90 transition-opacity">
-              <img
-                src={reporte.photo_url}
-                alt="Evidencia"
-                className="w-full h-full object-cover"
-              />
+              <img src={reporte.photo_url} alt="Evidencia" className="w-full h-full object-cover" />
             </div>
           </a>
         ) : (
@@ -137,13 +123,11 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
         )}
 
         <div className="p-4 space-y-4">
-          {/* Caso */}
           <div>
             <p className="text-text-muted text-[11px] uppercase tracking-wide mb-1">Caso</p>
             <p className="text-text-primary text-sm font-medium">{casoNombre}</p>
           </div>
 
-          {/* Descripción */}
           <div>
             <p className="text-text-muted text-[11px] uppercase tracking-wide mb-1">Descripción</p>
             <p className="text-text-primary text-sm leading-relaxed">
@@ -151,7 +135,6 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
             </p>
           </div>
 
-          {/* Fecha y coords */}
           <div className="space-y-2.5">
             <div className="flex items-start gap-2">
               <MapPin size={13} className="text-text-muted mt-0.5 flex-shrink-0" />
@@ -180,7 +163,6 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
             <p className="text-text-secondary text-xs">{formatFull(reporte.timestamp)}</p>
           </div>
 
-          {/* Mapa de ubicación */}
           <div className="h-40 rounded-lg overflow-hidden border border-border-soft">
             <Map
               defaultCenter={{ lat, lng }}
@@ -194,7 +176,6 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
             </Map>
           </div>
 
-          {/* Contacto */}
           {(reporte.contact_info.name || reporte.contact_info.phone) && (
             <div className="bg-bg-hover rounded-lg p-3 space-y-1.5">
               <p className="text-text-muted text-[11px] uppercase tracking-wide">Contacto</p>
@@ -207,9 +188,7 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
               {reporte.contact_info.phone && (
                 <div className="flex items-center gap-2">
                   <Phone size={12} className="text-text-muted" />
-                  <span className="text-text-primary text-sm">
-                    {reporte.contact_info.phone}
-                  </span>
+                  <span className="text-text-primary text-sm">{reporte.contact_info.phone}</span>
                 </div>
               )}
               {reporte.security_metadata.anonymous && (
@@ -219,79 +198,92 @@ function DetailPanel({ reporte, casoNombre, onClose }: DetailPanelProps) {
               )}
             </div>
           )}
+
+          {/* Estado + prioridad */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
+                reporte.validated
+                  ? 'bg-priority-low/15 text-priority-low border-priority-low/25'
+                  : 'bg-bg-hover text-text-muted border-border-soft'
+              }`}
+            >
+              {reporte.validated ? <ShieldCheck size={12} /> : <ShieldOff size={12} />}
+              {reporte.validated ? 'Validado' : 'Pendiente'}
+            </span>
+            {reporte.priority && (
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${PRIORITY_CLASS[reporte.priority]}`}>
+                {PRIORITY_LABEL[reporte.priority]}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Action */}
+      {/* Actions */}
       <div className="p-4 border-t border-border-soft flex-shrink-0 space-y-2">
-
-        {/* Confirmación inline */}
-        {confirmAction && (
-          <div className="bg-bg-hover border border-border-soft rounded-lg p-3 space-y-2">
-            <p className="text-text-secondary text-xs leading-snug">
-              {confirmLabels[confirmAction]}
-            </p>
+        {!reporte.validated ? (
+          pickingPriority ? (
+            <>
+              <p className="text-text-muted text-xs mb-1">Seleccioná la prioridad:</p>
+              <div className="grid grid-cols-3 gap-2">
+                {PRIORITY_OPTIONS.map(({ value, label, btnClass }) => (
+                  <button
+                    key={value}
+                    onClick={() => handleValidar(value)}
+                    disabled={mutation.isPending}
+                    className={`py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 ${btnClass}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setPickingPriority(false)}
+                className="w-full py-1.5 text-xs text-text-muted hover:text-text-primary transition-colors"
+              >
+                Cancelar
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setPickingPriority(true)}
+              disabled={mutation.isPending}
+              className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-brand-base hover:bg-brand-dark text-white rounded-lg transition-colors disabled:opacity-50"
+            >
+              <ShieldCheck size={14} />
+              Validar reporte
+            </button>
+          )
+        ) : confirmRevert ? (
+          <div className="space-y-2">
+            <p className="text-text-secondary text-xs">¿Revertir este reporte a pendiente?</p>
             <div className="flex gap-2">
               <button
-                onClick={handleConfirm}
-                disabled={isPending}
+                onClick={handleRevertir}
+                disabled={mutation.isPending}
                 className="flex-1 py-1.5 text-xs font-semibold bg-priority-high hover:bg-priority-high/80 text-white rounded-md transition-colors disabled:opacity-50"
               >
-                {isPending ? 'Procesando…' : 'Confirmar'}
+                {mutation.isPending ? 'Procesando…' : 'Confirmar'}
               </button>
               <button
-                onClick={() => setConfirmAction(null)}
-                disabled={isPending}
-                className="flex-1 py-1.5 text-xs font-medium border border-border-soft text-text-secondary hover:bg-bg-hover rounded-md transition-colors disabled:opacity-50"
+                onClick={() => setConfirmRevert(false)}
+                className="flex-1 py-1.5 text-xs font-medium border border-border-soft text-text-secondary hover:bg-bg-hover rounded-md transition-colors"
               >
                 Cancelar
               </button>
             </div>
           </div>
-        )}
-
-        {/* Botón quitar / asignar prioridad */}
-        {!confirmAction && (reporte.police_priority ? (
-          <button
-            onClick={() => setConfirmAction('quitarPrioridad')}
-            disabled={isPending}
-            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium border border-priority-high/40 text-priority-high hover:bg-priority-high/10 rounded-lg transition-colors disabled:opacity-50"
-          >
-            <Flag size={14} />
-            Quitar prioridad alta
-          </button>
         ) : (
           <button
-            onClick={() => setConfirmAction('asignarPrioridad')}
-            disabled={isPending}
-            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium border border-border-soft text-text-secondary hover:text-priority-high hover:border-priority-high/40 rounded-lg transition-colors disabled:opacity-50"
-          >
-            <Flag size={14} />
-            Asignar prioridad alta
-          </button>
-        ))}
-
-        {/* Botón validar / quitar validación */}
-        {!confirmAction && (reporte.validated ? (
-          <button
-            onClick={() => setConfirmAction('quitarValidacion')}
-            disabled={isPending}
+            onClick={() => setConfirmRevert(true)}
+            disabled={mutation.isPending}
             className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium border border-border-soft text-text-secondary hover:text-priority-high hover:border-priority-high/40 rounded-lg transition-colors disabled:opacity-50"
           >
             <ShieldOff size={14} />
-            Quitar validación
+            Revertir a pendiente
           </button>
-        ) : (
-          <button
-            onClick={() => validarMutation.mutate({ id: reporte.id, validated: true })}
-            disabled={isPending}
-            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-priority-low hover:bg-priority-low/80 text-white rounded-lg transition-colors disabled:opacity-50"
-          >
-            <ShieldCheck size={14} />
-            {validarMutation.isPending ? 'Procesando…' : 'Validar reporte'}
-          </button>
-        ))}
-
+        )}
       </div>
     </div>
   )
@@ -307,7 +299,7 @@ interface ReporteRowProps {
 }
 
 function ReporteRow({ reporte, casoNombre, isSelected, onClick }: ReporteRowProps) {
-  const dotColor = reporte.police_priority
+  const dotColor = reporte.priority === 'high'
     ? 'bg-priority-high'
     : reporte.validated
       ? 'bg-priority-low'
@@ -320,12 +312,10 @@ function ReporteRow({ reporte, casoNombre, isSelected, onClick }: ReporteRowProp
         isSelected ? 'bg-brand-base/10' : 'hover:bg-bg-hover'
       }`}
     >
-      {/* Status */}
       <td className="px-4 py-3 w-10">
         <div className={`w-2.5 h-2.5 rounded-full ${dotColor}`} />
       </td>
 
-      {/* Descripción */}
       <td className="px-2 py-3 max-w-0">
         <p className="text-text-primary text-sm truncate">
           {reporte.description || (
@@ -334,25 +324,21 @@ function ReporteRow({ reporte, casoNombre, isSelected, onClick }: ReporteRowProp
         </p>
       </td>
 
-      {/* Caso */}
       <td className="px-4 py-3 w-40 hidden md:table-cell">
         <p className="text-text-secondary text-xs truncate">{casoNombre}</p>
       </td>
 
-      {/* Fecha */}
       <td className="px-4 py-3 w-24 text-right hidden sm:table-cell">
         <span className="text-text-muted text-xs whitespace-nowrap">
           {formatRelative(reporte.timestamp)}
         </span>
       </td>
 
-      {/* Badges */}
       <td className="px-4 py-3 w-36">
         <div className="flex items-center gap-1.5 justify-end">
-          {reporte.police_priority && (
-            <span className="flex items-center gap-0.5 text-[9px] font-bold text-priority-high bg-priority-high/15 border border-priority-high/25 px-1.5 py-0.5 rounded-full">
-              <Flag size={8} />
-              ALTA
+          {reporte.priority && (
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${PRIORITY_CLASS[reporte.priority]}`}>
+              {PRIORITY_LABEL[reporte.priority].toUpperCase()}
             </span>
           )}
           <span
@@ -377,13 +363,10 @@ export function ReportesView() {
   const [casoIdFiltro, setCasoIdFiltro] = useState<string>('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const { isLoading, isError, reportes, casos, casoNombres, totales } = useReportesBandeja()
+  const { isLoading, isError, reportes, casos, casoNombres } = useReportesBandeja()
 
   const casosAbiertosIds = useMemo(
-    () => new Set(casos
-      .filter((c) => c.status === 'active_investigation')
-      .map((c) => c.id)
-    ),
+    () => new Set(casos.filter((c) => c.status === 'active_investigation').map((c) => c.id)),
     [casos],
   )
 
@@ -398,7 +381,7 @@ export function ReportesView() {
       case 'pendientes':
         return list.filter((r) => !r.validated)
       case 'prioritarios':
-        return list.filter((r) => r.police_priority)
+        return list.filter((r) => r.priority === 'high')
       case 'validados':
         return list.filter((r) => r.validated)
       default:
@@ -406,8 +389,6 @@ export function ReportesView() {
     }
   }, [reportes, casosAbiertosIds, activeTab, casoIdFiltro])
 
-  // Buscar en todos los reportes visibles para que el panel no desaparezca
-  // cuando el reporte cambia de estado y sale del filtro activo
   const visibleReportes = reportes.filter((r) => casosAbiertosIds.has(r.case_id))
   const selectedReporte = selectedId
     ? visibleReportes.find((r) => r.id === selectedId) ?? null
@@ -416,7 +397,7 @@ export function ReportesView() {
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: 'todos', label: 'Todos', count: visibleReportes.length },
     { key: 'pendientes', label: 'Pendientes', count: visibleReportes.filter((r) => !r.validated).length },
-    { key: 'prioritarios', label: 'Prioritarios', count: visibleReportes.filter((r) => r.police_priority).length },
+    { key: 'prioritarios', label: 'Prioritarios', count: visibleReportes.filter((r) => r.priority === 'high').length },
     { key: 'validados', label: 'Validados', count: visibleReportes.filter((r) => r.validated).length },
   ]
 
@@ -437,9 +418,7 @@ export function ReportesView() {
 
   return (
     <div className="flex gap-0 h-full -m-6" style={{ minHeight: 'calc(100vh - 52px)' }}>
-      {/* Left: table */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        {/* Toolbar */}
         <div className="px-6 pt-6 pb-0 bg-bg-app flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-text-primary font-bold text-lg">Bandeja de reportes</h1>
@@ -447,31 +426,22 @@ export function ReportesView() {
               {isLoading && <Loader2 size={15} className="animate-spin text-text-muted" />}
               <select
                 value={casoIdFiltro}
-                onChange={(e) => {
-                  setCasoIdFiltro(e.target.value)
-                  setSelectedId(null)
-                }}
+                onChange={(e) => { setCasoIdFiltro(e.target.value); setSelectedId(null) }}
                 className="bg-bg-panel border border-border-soft rounded-lg px-3 py-1.5 text-text-secondary text-sm focus:outline-none focus:border-brand-base transition-colors"
               >
                 <option value="">Todos los casos</option>
                 {casos.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.missing_person.name}
-                  </option>
+                  <option key={c.id} value={c.id}>{c.missing_person.name}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-1 border-b border-border-soft">
             {tabs.map(({ key, label, count }) => (
               <button
                 key={key}
-                onClick={() => {
-                  setActiveTab(key)
-                  setSelectedId(null)
-                }}
+                onClick={() => { setActiveTab(key); setSelectedId(null) }}
                 className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
                   activeTab === key
                     ? 'border-brand-base text-brand-base'
@@ -481,9 +451,7 @@ export function ReportesView() {
                 {label}
                 <span
                   className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${
-                    activeTab === key
-                      ? 'bg-brand-base/20 text-brand-base'
-                      : 'bg-bg-hover text-text-muted'
+                    activeTab === key ? 'bg-brand-base/20 text-brand-base' : 'bg-bg-hover text-text-muted'
                   }`}
                 >
                   {count}
@@ -493,15 +461,11 @@ export function ReportesView() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="flex-1 overflow-y-auto px-6 pb-6">
           {isLoading ? (
             <div className="space-y-0 mt-0">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 py-3.5 border-b border-border-soft animate-pulse"
-                >
+                <div key={i} className="flex items-center gap-4 py-3.5 border-b border-border-soft animate-pulse">
                   <div className="w-2.5 h-2.5 rounded-full bg-bg-hover" />
                   <div className="flex-1 h-3 bg-bg-hover rounded" />
                   <div className="w-24 h-3 bg-bg-hover rounded hidden md:block" />
@@ -519,7 +483,7 @@ export function ReportesView() {
                 {activeTab === 'pendientes'
                   ? 'No hay reportes pendientes'
                   : activeTab === 'prioritarios'
-                    ? 'No hay reportes prioritarios'
+                    ? 'No hay reportes de alta prioridad'
                     : activeTab === 'validados'
                       ? 'No hay reportes validados'
                       : 'No hay reportes aún'}
@@ -558,7 +522,6 @@ export function ReportesView() {
         </div>
       </div>
 
-      {/* Right: detail panel */}
       {selectedReporte && (
         <div className="w-[440px] flex-shrink-0 flex flex-col overflow-hidden border-l border-border-soft">
           <DetailPanel

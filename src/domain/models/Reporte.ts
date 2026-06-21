@@ -1,5 +1,7 @@
 import type { Ubicacion } from './Ubicacion'
 
+export type ReportePriority = 'high' | 'medium' | 'discarded'
+
 export interface ContactInfo {
   name: string | null
   phone: string | null
@@ -12,19 +14,15 @@ export interface Reporte {
   location: Ubicacion
   location_label?: string | null
   timestamp: string
-  police_priority: boolean
   description: string
   photo_url: string | null
   security_metadata: { anonymous: boolean }
   contact_info: ContactInfo
   validated: boolean
+  priority: ReportePriority | null
 }
 
 export interface ValidarReportePayload {
   validated: boolean
-}
-
-export interface PriorizarReportePayload {
-  police_priority: boolean
-  validated?: boolean
+  priority?: ReportePriority | null
 }

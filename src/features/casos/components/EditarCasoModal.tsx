@@ -131,7 +131,7 @@ export function EditarCasoModal({ caso, onClose }: Props) {
     queryFn: () => reportesService.listar({ case_id: caso.id, limit: 100 }),
   })
 
-  const reportesPrioritarios = (reportesData?.data ?? []).filter((r) => r.police_priority)
+  const reportesPrioritarios = (reportesData?.data ?? []).filter((r) => r.priority === 'high')
 
   const opcionesUbicacion: UbicacionOpcion[] = [
     {

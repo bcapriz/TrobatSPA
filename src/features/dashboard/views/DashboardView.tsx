@@ -171,7 +171,7 @@ function ReportesRecientes({ reportes }: { reportes: Reporte[] }) {
         >
           <div
             className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
-              r.police_priority
+              r.priority === 'high'
                 ? 'bg-priority-high'
                 : r.validated
                   ? 'bg-priority-low'
@@ -184,7 +184,7 @@ function ReportesRecientes({ reportes }: { reportes: Reporte[] }) {
             </p>
             <p className="text-text-muted text-[11px] mt-0.5">{formatRelative(r.timestamp)}</p>
           </div>
-          {r.police_priority && (
+          {r.priority === 'high' && (
             <span className="text-[9px] font-bold text-priority-high bg-priority-high/15 border border-priority-high/25 px-1.5 py-0.5 rounded-full flex-shrink-0">
               ALTA
             </span>

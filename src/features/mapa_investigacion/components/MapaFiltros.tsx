@@ -18,9 +18,9 @@ export function MapaFiltros({ reportes }: Props) {
   const reset = useMapaStore((s) => s.reset)
 
   const total = reportes.length
-  const prioritarios = reportes.filter((r) => r.police_priority).length
+  const prioritarios = reportes.filter((r) => r.priority === 'high').length
   const validados = reportes.filter((r) => r.validated).length
-  const pendientes = total - validados
+  const pendientes = reportes.filter((r) => !r.validated).length
 
   // Funciones de manejo exclusivas para cada filtro
   const handleTogglePrioridad = () => {
@@ -163,8 +163,9 @@ export function MapaFiltros({ reportes }: Props) {
           </p>
           <div className="space-y-2">
             {[
-              { color: 'bg-priority-high', label: 'Prioridad policial' },
-              { color: 'bg-priority-low', label: 'Validado' },
+              { color: 'bg-priority-high', label: 'Alta prioridad' },
+              { color: 'bg-priority-low', label: 'Media prioridad' },
+              { color: 'bg-text-muted', label: 'Descartado' },
               { color: 'bg-brand-base', label: 'Pendiente' },
             ].map(({ color, label }) => (
               <div key={label} className="flex items-center gap-2.5">

@@ -80,13 +80,14 @@ export function useFeedNotificaciones() {
 
     for (const r of reportes) {
       const nombre = casoNombres[r.case_id] ?? 'caso desconocido'
+      const extracto = r.description?.slice(0, 60) || 'Sin descripción'
 
-      if (r.police_priority && !r.validated) {
+      if (r.priority === 'high') {
         items.push({
           id: `r-prio-${r.id}`,
           tipo: 'reporte_prioritario',
           titulo: 'Alerta de prioridad alta',
-          subtitulo: `${nombre} · ${r.description?.slice(0, 60) || 'Sin descripción'}`,
+          subtitulo: `${nombre} · ${extracto}`,
           timestamp: r.timestamp,
           urgente: true,
         })
@@ -95,7 +96,7 @@ export function useFeedNotificaciones() {
           id: `r-val-${r.id}`,
           tipo: 'reporte_validado',
           titulo: 'Reporte validado',
-          subtitulo: `${nombre} · ${r.description?.slice(0, 60) || 'Sin descripción'}`,
+          subtitulo: `${nombre} · ${extracto}`,
           timestamp: r.timestamp,
           urgente: false,
         })
@@ -104,7 +105,7 @@ export function useFeedNotificaciones() {
           id: `r-new-${r.id}`,
           tipo: 'reporte_nuevo',
           titulo: 'Nuevo avistamiento',
-          subtitulo: `${nombre} · ${r.description?.slice(0, 60) || 'Sin descripción'}`,
+          subtitulo: `${nombre} · ${extracto}`,
           timestamp: r.timestamp,
           urgente: false,
         })

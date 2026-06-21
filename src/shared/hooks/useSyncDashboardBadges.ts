@@ -4,8 +4,6 @@ import { casosService } from '../../data/services/casosService'
 import { reportesService } from '../../data/services/reportesService'
 import { useDashboardStore } from '../../core/stores/dashboardStore'
 
-// Runs once in MainLayout to keep sidebar badge counts in sync.
-// Uses the same query keys as useDashboardData so no extra API calls are made.
 export function useSyncDashboardBadges() {
   const setCasosActivos = useDashboardStore((s) => s.setCasosActivos)
   const setReportesPendientes = useDashboardStore((s) => s.setReportesPendientes)
@@ -33,6 +31,6 @@ export function useSyncDashboardBadges() {
   useEffect(() => {
     const reportes = reportesData?.data ?? []
     setReportesPendientes(reportes.filter((r) => !r.validated).length)
-    setNotificacionesSinLeer(reportes.filter((r) => r.police_priority && !r.validated).length)
+    setNotificacionesSinLeer(reportes.filter((r) => r.priority === 'high').length)
   }, [reportesData, setReportesPendientes, setNotificacionesSinLeer])
 }

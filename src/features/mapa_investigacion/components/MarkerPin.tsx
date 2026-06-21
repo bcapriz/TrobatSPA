@@ -1,14 +1,16 @@
 import type { Reporte } from '../../../domain/models'
 
 const COLORS = {
-  priority: '#ef4444',
-  validated: '#22c55e',
+  high: '#ef4444',
+  medium: '#22c55e',
+  discarded: '#6b7280',
   pending: '#6c63ff',
 }
 
 function getColor(reporte: Reporte): string {
-  if (reporte.police_priority) return COLORS.priority
-  if (reporte.validated) return COLORS.validated
+  if (reporte.priority === 'high') return COLORS.high
+  if (reporte.priority === 'medium') return COLORS.medium
+  if (reporte.priority === 'discarded') return COLORS.discarded
   return COLORS.pending
 }
 

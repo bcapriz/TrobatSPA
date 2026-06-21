@@ -66,7 +66,7 @@ export function MapaView() {
     )
 
     if (soloPrioridad) {
-      result = result.filter((r) => r.police_priority)
+      result = result.filter((r) => r.priority === 'high')
     }
 
     if (soloValidados) {
@@ -227,7 +227,7 @@ export function MapaView() {
                     key={reporte.id}
                     position={{ lat, lng }}
                     onClick={() => handleMarkerClick(reporte)}
-                    zIndex={reporte.police_priority ? 10 : 1}
+                    zIndex={reporte.priority === 'high' ? 10 : 1}
                   >
                     <MarkerPin reporte={reporte} />
                   </AdvancedMarker>

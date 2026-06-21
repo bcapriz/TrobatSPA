@@ -1,10 +1,15 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { X, ChevronLeft, ChevronRight, AlertCircle, Loader2 } from 'lucide-react'
-import type { Caso, Reporte } from '../../../domain/models'
+import type { Caso, Reporte, ReportePriority } from '../../../domain/models'
 import { useObtenerReportesCaso } from '../hooks/useObtenerReportesCaso'
 import { useValidarReporteMutation } from '../../mapa_investigacion/hooks/useValidarReporteMutation'
-import { useAsignarPrioridadMutation } from '../hooks/useAsignarPrioridadMutation'
+
+const PRIORITY_OPTIONS: { value: ReportePriority; label: string; btnClass: string }[] = [
+  { value: 'high', label: 'Alta prioridad', btnClass: 'bg-priority-high hover:bg-priority-high/80 text-white' },
+  { value: 'medium', label: 'Media', btnClass: 'bg-priority-low hover:bg-priority-low/80 text-white' },
+  { value: 'discarded', label: 'Descartar', btnClass: 'border border-border-hard text-text-secondary hover:text-text-primary hover:bg-bg-hover' },
+]
 
 interface Props {
   caso: Caso | null
@@ -17,8 +22,7 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
   const [localReportes, setLocalReportes] = useState<Reporte[]>([])
   const queryClient = useQueryClient()
   const { data: reportesData, isLoading, isError } = useObtenerReportesCaso(caso?.id ?? '')
-  const validarMutation = useValidarReporteMutation()
-  const prioridadMutation = useAsignarPrioridadMutation()
+  const mutation = useValidarReporteMutation()
 
   const reportes = localReportes
 
@@ -39,84 +43,37 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
 
   const currentReporte = reportes[currentIndex]
 
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? reportes.length - 1 : prev - 1))
-  }
+  const handlePrev = () => setCurrentIndex((prev) => (prev === 0 ? reportes.length - 1 : prev - 1))
+  const handleNext = () => setCurrentIndex((prev) => (prev === reportes.length - 1 ? 0 : prev + 1))
+  const handleClose = () => { setCurrentIndex(0); onClose() }
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev === reportes.length - 1 ? 0 : prev + 1))
-  }
-
-  const handleClose = () => {
-    setCurrentIndex(0)
-    onClose()
-  }
-
-  const removeReporteFromCache = (reporteId: string) => {
+  const removeFromCache = (reporteId: string) => {
     if (!caso) return
-    const cacheKey = ['reportes-caso', caso.id]
-    queryClient.setQueryData(cacheKey, (oldData: unknown) => {
+    queryClient.setQueryData(['reportes-caso', caso.id], (oldData: unknown) => {
       if (!oldData || typeof oldData !== 'object') return oldData
       const data = (oldData as { data?: Reporte[] }).data
       if (!Array.isArray(data)) return oldData
-
-      return {
-        ...(oldData as object),
-        data: data.filter((reporte) => reporte.id !== reporteId),
-      }
+      return { ...(oldData as object), data: data.filter((r) => r.id !== reporteId) }
     })
   }
 
-  const handleValidarReporte = () => {
+  const handleValidar = (priority: ReportePriority) => {
     if (!currentReporte) return
-    if (!window.confirm('¿Confirmás validar este reporte?')) return
+    if (!window.confirm(`¿Confirmás validar este reporte con prioridad "${priority === 'high' ? 'alta' : priority === 'medium' ? 'media' : 'descartado'}"?`)) return
 
     const currentId = currentReporte.id
     const currentLength = reportes.length
 
-    setLocalReportes((prev) => prev.filter((reporte) => reporte.id !== currentId))
-    setCurrentIndex((prevIndex) => (prevIndex >= currentLength - 1 ? 0 : prevIndex))
+    setLocalReportes((prev) => prev.filter((r) => r.id !== currentId))
+    setCurrentIndex((prev) => (prev >= currentLength - 1 ? 0 : prev))
 
-    validarMutation.mutate(
-      { id: currentId, validated: true },
+    mutation.mutate(
+      { id: currentId, validated: true, priority },
       {
-        onError: () => {
-          queryClient.invalidateQueries({ queryKey: ['reportes-caso', caso.id], exact: true })
-        },
+        onError: () => queryClient.invalidateQueries({ queryKey: ['reportes-caso', caso.id], exact: true }),
         onSuccess: () => {
-          removeReporteFromCache(currentId)
-          if (currentLength <= 1) {
-            handleClose()
-          }
-        },
-      },
-    )
-  }
-
-  const handlePrioridadAlta = () => {
-    if (!currentReporte) return
-    if (!window.confirm('¿Confirmás asignar prioridad alta y validar automáticamente este reporte?')) return
-
-    const currentId = currentReporte.id
-    const currentLength = reportes.length
-
-    setLocalReportes((prev) => prev.filter((reporte) => reporte.id !== currentId))
-    setCurrentIndex((prevIndex) => (prevIndex >= currentLength - 1 ? 0 : prevIndex))
-
-    prioridadMutation.mutate(
-      {
-        id: currentId,
-        payload: { police_priority: true, validated: true },
-      },
-      {
-        onError: () => {
-          queryClient.invalidateQueries({ queryKey: ['reportes-caso', caso.id], exact: true })
-        },
-        onSuccess: () => {
-          removeReporteFromCache(currentId)
-          if (currentLength <= 1) {
-            handleClose()
-          }
+          removeFromCache(currentId)
+          if (currentLength <= 1) handleClose()
         },
       },
     )
@@ -131,10 +88,7 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
             <h2 className="text-text-primary font-bold text-lg">{caso.missing_person.name}</h2>
             <p className="text-text-muted text-xs mt-1">Reportes y avistamientos</p>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-1.5 hover:bg-bg-hover rounded-lg transition-colors"
-          >
+          <button onClick={handleClose} className="p-1.5 hover:bg-bg-hover rounded-lg transition-colors">
             <X size={18} className="text-text-muted" />
           </button>
         </div>
@@ -156,159 +110,104 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
             </div>
           ) : (
             <div className="space-y-5">
-              {/* Carousel */}
               <div className="rounded-xl overflow-hidden border border-border-soft bg-bg-hover">
                 {currentReporte && (
                   <>
-                    <div className="relative">
-                      <div className="w-full h-56 overflow-hidden bg-bg-panel/70 flex items-center justify-center text-text-muted">
-                        {currentReporte.photo_url ? (
-                          <img
-                            src={currentReporte.photo_url}
-                            alt="Foto del reporte"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-sm font-medium">
-                            Sin imagen disponible
-                          </div>
-                        )}
-                      </div>
+                    <div className="w-full h-56 overflow-hidden bg-bg-panel/70 flex items-center justify-center text-text-muted">
+                      {currentReporte.photo_url ? (
+                        <img src={currentReporte.photo_url} alt="Foto del reporte" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-sm font-medium">
+                          Sin imagen disponible
+                        </div>
+                      )}
                     </div>
+
                     {reportes.length > 1 && (
                       <div className="flex items-center justify-between px-4 py-3">
-                        <button
-                          onClick={handlePrev}
-                          className="p-3 bg-brand-base/90 hover:bg-brand-base text-white rounded-full shadow-lg transition-colors"
-                        >
+                        <button onClick={handlePrev} className="p-3 bg-brand-base/90 hover:bg-brand-base text-white rounded-full shadow-lg transition-colors">
                           <ChevronLeft size={18} />
                         </button>
-                        <button
-                          onClick={handleNext}
-                          className="p-3 bg-brand-base/90 hover:bg-brand-base text-white rounded-full shadow-lg transition-colors"
-                        >
+                        <button onClick={handleNext} className="p-3 bg-brand-base/90 hover:bg-brand-base text-white rounded-full shadow-lg transition-colors">
                           <ChevronRight size={18} />
                         </button>
                       </div>
                     )}
+
                     <div className="p-6 space-y-5">
                       <div className="space-y-3">
                         <div>
                           <p className="text-xs text-text-muted uppercase tracking-wide font-medium">Caso</p>
                           <p className="text-text-primary font-semibold text-lg">{caso.missing_person.name}</p>
                         </div>
-
                         <div>
                           <p className="text-xs text-text-muted uppercase tracking-wide font-medium">Descripción</p>
                           <p className="text-text-secondary text-sm leading-6">
                             {currentReporte.description || 'Sin descripción'}
                           </p>
                         </div>
-
                         <div>
                           <p className="text-xs text-text-muted uppercase tracking-wide font-medium">Ubicación</p>
                           <p className="text-text-primary font-semibold">
                             {currentReporte.location.coordinates[1].toFixed(4)}, {currentReporte.location.coordinates[0].toFixed(4)}
                           </p>
-                          <p className="text-text-muted text-xs mt-1">
-                            Dirección no disponible
-                          </p>
                         </div>
-
                         <div>
                           <p className="text-xs text-text-muted uppercase tracking-wide font-medium">Fecha y hora</p>
                           <p className="text-text-secondary text-sm">
                             {new Date(currentReporte.timestamp).toLocaleString('es-AR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
+                              day: '2-digit', month: '2-digit', year: 'numeric',
+                              hour: '2-digit', minute: '2-digit',
                             })}
                           </p>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-2xl border border-border-soft bg-bg-panel p-4">
-                          <p className="text-xs text-text-muted uppercase tracking-wide font-medium">Estado de validación</p>
-                          <p className="mt-2 text-sm font-semibold text-text-primary">
-                            {currentReporte.validated ? 'Validado' : 'Pendiente'}
-                          </p>
+                      {/* Validar con prioridad */}
+                      <div className="space-y-2">
+                        <p className="text-xs text-text-muted uppercase tracking-wide font-medium">
+                          Validar reporte como:
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {PRIORITY_OPTIONS.map(({ value, label, btnClass }) => (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => handleValidar(value)}
+                              disabled={mutation.isPending}
+                              className={`py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${btnClass}`}
+                            >
+                              {label}
+                            </button>
+                          ))}
                         </div>
-                        <div className="rounded-2xl border border-border-soft bg-bg-panel p-4">
-                          <p className="text-xs text-text-muted uppercase tracking-wide font-medium">Prioridad</p>
-                          <p className="mt-2 text-sm font-semibold text-text-primary">
-                            {currentReporte.police_priority ? 'Prioridad alta' : 'No prioritario'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <button
-                          type="button"
-                          onClick={handleValidarReporte}
-                          disabled={validarMutation.isLoading || prioridadMutation.isLoading}
-                          className="w-full sm:w-auto px-5 py-3 rounded-full bg-priority-low text-slate-900 font-semibold hover:bg-priority-low/90 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Validar reporte
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handlePrioridadAlta}
-                          disabled={currentReporte.police_priority || validarMutation.isLoading || prioridadMutation.isLoading}
-                          className="w-full sm:w-auto px-5 py-3 rounded-full bg-priority-high text-white font-semibold hover:bg-priority-high/90 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Asignar prioridad alta
-                        </button>
                       </div>
                     </div>
                   </>
                 )}
-
-                {/* Navigation buttons */}
-                {reportes.length > 1 && (
-                  <>
-                    <button
-                      onClick={handlePrev}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-brand-base/90 hover:bg-brand-base text-white rounded-full shadow-lg transition-colors z-10"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <button
-                      onClick={handleNext}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-brand-base/90 hover:bg-brand-base text-white rounded-full shadow-lg transition-colors z-10"
-                    >
-                      <ChevronRight size={20} />
-                    </button>
-                  </>
-                )}
               </div>
 
-              {/* Info y counter */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-text-muted">
-                    Reporte {currentIndex + 1} de {reportes.length}
-                  </span>
-                  <div className="flex gap-1">
-                    {reportes.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCurrentIndex(idx)}
-                        className={`w-2 h-2 rounded-full transition-all ${
-                          idx === currentIndex ? 'bg-brand-base w-6' : 'bg-border-soft hover:bg-border-hard'
-                        }`}
-                      />
-                    ))}
-                  </div>
+              {/* Counter */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-text-muted">
+                  Reporte {currentIndex + 1} de {reportes.length}
+                </span>
+                <div className="flex gap-1">
+                  {reportes.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentIndex(idx)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        idx === currentIndex ? 'bg-brand-base w-6' : 'bg-border-soft hover:bg-border-hard'
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-3 border-t border-border-soft flex justify-end">
           <button
             onClick={handleClose}

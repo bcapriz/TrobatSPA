@@ -1,4 +1,4 @@
-import type { Reporte, ValidarReportePayload, PriorizarReportePayload } from '../../domain/models'
+import type { Reporte, ValidarReportePayload } from '../../domain/models'
 import { apiClient } from '../../core/api'
 
 export interface ListarReportesFiltros {
@@ -28,15 +28,6 @@ export const reportesService = {
   validar: async (id: string, payload: ValidarReportePayload) => {
     try {
       const r = await apiClient.patch<{ message: string }>(`/reportes/${id}/validar`, payload)
-      return r.data
-    } catch (error) {
-      throw error
-    }
-  },
-
-  priorizar: async (id: string, payload: PriorizarReportePayload) => {
-    try {
-      const r = await apiClient.patch<{ message: string }>(`/reportes/${id}/prioridad`, payload)
       return r.data
     } catch (error) {
       throw error

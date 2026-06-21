@@ -21,7 +21,7 @@ export function useDashboardData() {
   const casosActivos = casos.filter((c) => c.status === 'active_investigation').length
 
   const reportesPendientes = reportes.filter((r) => !r.validated).length
-  const reportesPrioritarios = reportes.filter((r) => r.police_priority).length
+  const reportesPrioritarios = reportes.filter((r) => r.priority === 'high').length
   const agentesUnicos = new Set(casos.flatMap((c) => c.assigned_agents)).size
 
   const estadosCount = {
@@ -39,7 +39,7 @@ export function useDashboardData() {
     .slice(0, 6)
 
   const alertasActivas = reportes
-    .filter((r) => r.police_priority && !r.validated)
+    .filter((r) => r.priority === 'high')
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, 5)
 

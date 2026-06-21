@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { X, MapPin, Clock, ShieldCheck, ShieldOff, Flag, Loader2 } from 'lucide-react'
-import type { Reporte } from '../../../domain/models'
+import type { Reporte, ReportePriority } from '../../../domain/models'
 import { useValidarReporteMutation } from '../hooks/useValidarReporteMutation'
 import { useReverseGeocode } from '../../../shared/hooks/useReverseGeocode'
 
@@ -7,6 +8,36 @@ interface Props {
   reporte: Reporte
   casoNombre: string
   onClose: () => void
+}
+
+const PRIORITY_OPTIONS: { value: ReportePriority; label: string; className: string }[] = [
+  {
+    value: 'high',
+    label: 'Alta',
+    className: 'bg-priority-high hover:bg-priority-high/80 text-white',
+  },
+  {
+    value: 'medium',
+    label: 'Media',
+    className: 'bg-priority-low hover:bg-priority-low/80 text-white',
+  },
+  {
+    value: 'discarded',
+    label: 'Descartar',
+    className: 'border border-border-hard text-text-secondary hover:text-text-primary hover:bg-bg-hover',
+  },
+]
+
+const PRIORITY_LABEL: Record<ReportePriority, string> = {
+  high: 'Alta prioridad',
+  medium: 'Media',
+  discarded: 'Descartado',
+}
+
+const PRIORITY_CLASS: Record<ReportePriority, string> = {
+  high: 'bg-priority-high/15 text-priority-high border-priority-high/25',
+  medium: 'bg-priority-low/15 text-priority-low border-priority-low/25',
+  discarded: 'bg-bg-hover text-text-muted border-border-soft',
 }
 
 function formatDateTime(iso: string): string {
@@ -21,19 +52,29 @@ function formatDateTime(iso: string): string {
 
 export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
   const mutation = useValidarReporteMutation()
+  const [pickingPriority, setPickingPriority] = useState(false)
 
   const [lng, lat] = reporte.location.coordinates
   const { data: direccion, isLoading: geocodingLoading } = useReverseGeocode(lat, lng)
+
+  const handleValidar = (priority: ReportePriority) => {
+    setPickingPriority(false)
+    mutation.mutate({ id: reporte.id, validated: true, priority })
+  }
+
+  const handleRevertir = () => {
+    mutation.mutate({ id: reporte.id, validated: false, priority: null })
+  }
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-soft flex-shrink-0">
         <div className="flex items-center gap-2">
           <h3 className="text-text-primary font-semibold text-sm">Detalle del reporte</h3>
-          {reporte.police_priority && (
+          {reporte.priority === 'high' && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-priority-high bg-priority-high/15 border border-priority-high/25 px-1.5 py-0.5 rounded-full">
               <Flag size={9} />
-              PRIORITARIO
+              ALTA
             </span>
           )}
         </div>
@@ -46,17 +87,11 @@ export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {reporte.photo_url && (
+        {reporte.photo_url ? (
           <div className="w-full aspect-video bg-bg-hover overflow-hidden">
-            <img
-              src={reporte.photo_url}
-              alt="Evidencia fotográfica"
-              className="w-full h-full object-cover"
-            />
+            <img src={reporte.photo_url} alt="Evidencia fotográfica" className="w-full h-full object-cover" />
           </div>
-        )}
-
-        {!reporte.photo_url && (
+        ) : (
           <div className="w-full aspect-video bg-bg-hover flex items-center justify-center">
             <p className="text-text-muted text-sm">Sin foto adjunta</p>
           </div>
@@ -64,21 +99,13 @@ export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
 
         <div className="p-4 space-y-4">
           <div>
-            <p className="text-text-secondary text-xs uppercase tracking-wide mb-1 font-medium">
-              Desaparecido
-            </p>
-            <p className="text-text-primary text-sm leading-relaxed">
-              {casoNombre || 'Caso desconocido'}
-            </p>
+            <p className="text-text-secondary text-xs uppercase tracking-wide mb-1 font-medium">Desaparecido</p>
+            <p className="text-text-primary text-sm leading-relaxed">{casoNombre || 'Caso desconocido'}</p>
           </div>
 
           <div>
-            <p className="text-text-secondary text-xs uppercase tracking-wide mb-1 font-medium">
-              Descripción
-            </p>
-            <p className="text-text-primary text-sm leading-relaxed">
-              {reporte.description || 'Sin descripción'}
-            </p>
+            <p className="text-text-secondary text-xs uppercase tracking-wide mb-1 font-medium">Descripción</p>
+            <p className="text-text-primary text-sm leading-relaxed">{reporte.description || 'Sin descripción'}</p>
           </div>
 
           <div className="space-y-2">
@@ -117,9 +144,7 @@ export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
 
           {reporte.contact_info.name && (
             <div>
-              <p className="text-text-secondary text-xs uppercase tracking-wide mb-1 font-medium">
-                Contacto
-              </p>
+              <p className="text-text-secondary text-xs uppercase tracking-wide mb-1 font-medium">Contacto</p>
               <p className="text-text-primary text-sm">{reporte.contact_info.name}</p>
               {reporte.contact_info.phone && (
                 <p className="text-text-muted text-xs">{reporte.contact_info.phone}</p>
@@ -139,6 +164,12 @@ export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
               {reporte.validated ? 'Validado' : 'Pendiente'}
             </div>
 
+            {reporte.priority && (
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${PRIORITY_CLASS[reporte.priority]}`}>
+                {PRIORITY_LABEL[reporte.priority]}
+              </span>
+            )}
+
             {reporte.security_metadata.anonymous && (
               <span className="text-xs text-text-muted border border-border-soft px-2 py-0.5 rounded-full">
                 Anónimo
@@ -150,22 +181,46 @@ export function ReportePanel({ reporte, casoNombre, onClose }: Props) {
 
       <div className="p-4 border-t border-border-soft space-y-2 flex-shrink-0">
         {!reporte.validated ? (
-          <button
-            onClick={() => mutation.mutate({ id: reporte.id, validated: true })}
-            disabled={mutation.isPending}
-            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-priority-low hover:bg-priority-low/80 text-white rounded-lg transition-colors disabled:opacity-50"
-          >
-            <ShieldCheck size={14} />
-            {mutation.isPending ? 'Procesando...' : 'Validar reporte'}
-          </button>
+          pickingPriority ? (
+            <>
+              <p className="text-text-muted text-xs mb-2">Seleccioná la prioridad del reporte:</p>
+              <div className="grid grid-cols-3 gap-2">
+                {PRIORITY_OPTIONS.map(({ value, label, className }) => (
+                  <button
+                    key={value}
+                    onClick={() => handleValidar(value)}
+                    disabled={mutation.isPending}
+                    className={`py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 ${className}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setPickingPriority(false)}
+                className="w-full py-1.5 text-xs text-text-muted hover:text-text-primary transition-colors"
+              >
+                Cancelar
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setPickingPriority(true)}
+              disabled={mutation.isPending}
+              className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold bg-brand-base hover:bg-brand-dark text-white rounded-lg transition-colors disabled:opacity-50"
+            >
+              <ShieldCheck size={14} />
+              {mutation.isPending ? 'Procesando...' : 'Validar reporte'}
+            </button>
+          )
         ) : (
           <button
-            onClick={() => mutation.mutate({ id: reporte.id, validated: false })}
+            onClick={handleRevertir}
             disabled={mutation.isPending}
             className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium border border-border-soft text-text-secondary hover:text-priority-high hover:border-priority-high/40 rounded-lg transition-colors disabled:opacity-50"
           >
             <ShieldOff size={14} />
-            {mutation.isPending ? 'Procesando...' : 'Quitar validación'}
+            {mutation.isPending ? 'Procesando...' : 'Revertir a pendiente'}
           </button>
         )}
       </div>

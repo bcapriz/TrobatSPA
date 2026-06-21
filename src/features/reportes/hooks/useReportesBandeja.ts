@@ -29,7 +29,7 @@ export function useReportesBandeja() {
     totales: {
       todos: reportes.length,
       pendientes: reportes.filter((r) => !r.validated).length,
-      prioritarios: reportes.filter((r) => r.police_priority).length,
+      prioritarios: reportes.filter((r) => r.priority === 'high').length,
       validados: reportes.filter((r) => r.validated).length,
     },
   }
