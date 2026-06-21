@@ -23,6 +23,7 @@ export function MapaView() {
   const soloPrioridad = useMapaStore((s) => s.soloPrioridad)
   const soloValidados = useMapaStore((s) => s.soloValidados)
   const soloPendientes = useMapaStore((s) => s.soloPendientes)
+  const soloDescartados = useMapaStore((s) => s.soloDescartados)
   const ordenFecha = useMapaStore((s) => s.ordenFecha)
 
   const { data: reportesData, isLoading, isError } = useObtenerReportes()
@@ -70,18 +71,22 @@ export function MapaView() {
     }
 
     if (soloValidados) {
-      result = result.filter((r) => r.validated)
+      result = result.filter((r) => r.validated && r.priority !== 'discarded')
     }
 
     if (soloPendientes) {
       result = result.filter((r) => !r.validated)
     }
 
+    if (soloDescartados) {
+      result = result.filter((r) => r.priority === 'discarded')
+    }
+
     return [...result].sort((a, b) => {
       const diff = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       return ordenFecha === 'desc' ? -diff : diff
     })
-  }, [reportesData, casosData, soloPrioridad, soloValidados, soloPendientes, ordenFecha])
+  }, [reportesData, casosData, soloPrioridad, soloValidados, soloPendientes, soloDescartados, ordenFecha])
 
   const selectedReporte = reportesFiltrados.find((r) => r.id === selectedReporteId) ?? null
 

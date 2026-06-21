@@ -13,42 +13,17 @@ export function MapaFiltros({ reportes }: Props) {
   const setSoloValidados = useMapaStore((s) => s.setSoloValidados)
   const soloPendientes = useMapaStore((s) => s.soloPendientes)
   const setSoloPendientes = useMapaStore((s) => s.setSoloPendientes)
+  const soloDescartados = useMapaStore((s) => s.soloDescartados)
+  const setSoloDescartados = useMapaStore((s) => s.setSoloDescartados)
   const ordenFecha = useMapaStore((s) => s.ordenFecha)
   const setOrdenFecha = useMapaStore((s) => s.setOrdenFecha)
   const reset = useMapaStore((s) => s.reset)
 
   const total = reportes.length
   const prioritarios = reportes.filter((r) => r.priority === 'high').length
-  const validados = reportes.filter((r) => r.validated).length
+  const validados = reportes.filter((r) => r.validated && r.priority !== 'discarded').length
   const pendientes = reportes.filter((r) => !r.validated).length
-
-  // Funciones de manejo exclusivas para cada filtro
-  const handleTogglePrioridad = () => {
-    const nuevoEstado = !soloPrioridad
-    setSoloPrioridad(nuevoEstado)
-    if (nuevoEstado) {
-      setSoloValidados(false)
-      setSoloPendientes(false)
-    }
-  }
-
-  const handleToggleValidados = () => {
-    const nuevoEstado = !soloValidados
-    setSoloValidados(nuevoEstado)
-    if (nuevoEstado) {
-      setSoloPrioridad(false)
-      setSoloPendientes(false)
-    }
-  }
-
-  const handleTogglePendientes = () => {
-    const nuevoEstado = !soloPendientes
-    setSoloPendientes(nuevoEstado)
-    if (nuevoEstado) {
-      setSoloPrioridad(false)
-      setSoloValidados(false)
-    }
-  }
+  const descartados = reportes.filter((r) => r.priority === 'discarded').length
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -70,9 +45,10 @@ export function MapaFiltros({ reportes }: Props) {
           </p>
           <div className="grid grid-cols-2 gap-2">
             <StatTile label="Total pines" value={total} color="text-text-primary" />
-            <StatTile label="Prioritarios" value={prioritarios} color="text-priority-high" />
+            <StatTile label="Alta prioridad" value={prioritarios} color="text-priority-high" />
             <StatTile label="Validados" value={validados} color="text-priority-low" />
-            <StatTile label="Pendientes" value={pendientes} color="text-text-secondary" />
+            <StatTile label="Pendientes" value={pendientes} color="text-brand-base" />
+            <StatTile label="Descartados" value={descartados} color="text-text-muted" />
           </div>
         </div>
 
@@ -89,7 +65,7 @@ export function MapaFiltros({ reportes }: Props) {
                 <span className="text-text-primary text-sm">Solo prioritarios</span>
               </div>
               <button
-                onClick={handleTogglePrioridad}
+                onClick={() => setSoloPrioridad(!soloPrioridad)}
                 className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 flex items-center px-0.5 ${
                   soloPrioridad ? 'bg-brand-base' : 'bg-border-hard'
                 }`}
@@ -109,7 +85,7 @@ export function MapaFiltros({ reportes }: Props) {
                 <span className="text-text-primary text-sm">Solo validados</span>
               </div>
               <button
-                onClick={handleToggleValidados}
+                onClick={() => setSoloValidados(!soloValidados)}
                 className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 flex items-center px-0.5 ${
                   soloValidados ? 'bg-brand-base' : 'bg-border-hard'
                 }`}
@@ -129,7 +105,7 @@ export function MapaFiltros({ reportes }: Props) {
                 <span className="text-text-primary text-sm">Solo pendientes</span>
               </div>
               <button
-                onClick={handleTogglePendientes}
+                onClick={() => setSoloPendientes(!soloPendientes)}
                 className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 flex items-center px-0.5 ${
                   soloPendientes ? 'bg-brand-base' : 'bg-border-hard'
                 }`}
@@ -137,6 +113,26 @@ export function MapaFiltros({ reportes }: Props) {
                 <span
                   className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
                     soloPendientes ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* SOLO DESCARTADOS */}
+            <div className="flex items-center justify-between bg-bg-hover rounded-lg px-3 py-1.5">
+              <div className="flex items-center gap-2">
+                <Flag size={14} className="text-text-muted" />
+                <span className="text-text-primary text-sm">Solo descartados</span>
+              </div>
+              <button
+                onClick={() => setSoloDescartados(!soloDescartados)}
+                className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 flex items-center px-0.5 ${
+                  soloDescartados ? 'bg-brand-base' : 'bg-border-hard'
+                }`}
+              >
+                <span
+                  className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                    soloDescartados ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
               </button>
@@ -165,8 +161,8 @@ export function MapaFiltros({ reportes }: Props) {
             {[
               { color: 'bg-priority-high', label: 'Alta prioridad' },
               { color: 'bg-priority-low', label: 'Media prioridad' },
-              { color: 'bg-text-muted', label: 'Descartado' },
               { color: 'bg-brand-base', label: 'Pendiente' },
+              { color: 'bg-[#6b7280]', label: 'Descartado' },
             ].map(({ color, label }) => (
               <div key={label} className="flex items-center gap-2.5">
                 <div className={`w-3 h-3 rounded-full ${color} flex-shrink-0`} />
