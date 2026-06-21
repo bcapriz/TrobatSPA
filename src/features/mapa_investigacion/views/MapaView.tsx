@@ -15,7 +15,7 @@ const MAPS_MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefin
 const BUENOS_AIRES = { lat: -34.6037, lng: -58.3816 }
 
 export function MapaView() {
-  const [selectedReporte, setSelectedReporte] = useState<Reporte | null>(null)
+  const [selectedReporteId, setSelectedReporteId] = useState<string | null>(null)
   const [searchCaso, setSearchCaso] = useState('')
 
   const casoIdFiltro = useMapaStore((s) => s.casoIdFiltro)
@@ -83,8 +83,10 @@ export function MapaView() {
     })
   }, [reportesData, casosData, soloPrioridad, soloValidados, soloPendientes, ordenFecha])
 
+  const selectedReporte = reportesFiltrados.find((r) => r.id === selectedReporteId) ?? null
+
   const handleMarkerClick = (reporte: Reporte) => {
-    setSelectedReporte((prev) => (prev?.id === reporte.id ? null : reporte))
+    setSelectedReporteId((prev) => (prev === reporte.id ? null : reporte.id))
   }
 
   return (
@@ -241,7 +243,7 @@ export function MapaView() {
             <ReportePanel
               reporte={selectedReporte}
               casoNombre={casoNombres[selectedReporte.case_id] ?? 'Caso desconocido'}
-              onClose={() => setSelectedReporte(null)}
+              onClose={() => setSelectedReporteId(null)}
             />
           ) : (
             <MapaFiltros reportes={reportesFiltrados} />
