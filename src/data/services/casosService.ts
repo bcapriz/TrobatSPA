@@ -54,7 +54,9 @@ export const casosService = {
       const formData = new FormData()
       formData.append('datos', JSON.stringify(payload))
       formData.append('foto', foto)
-      const r = await apiClient.post<{ id: string; message: string }>('/casos', formData)
+      const r = await apiClient.post<{ id: string; message: string }>('/casos', formData, {
+        headers: { 'Content-Type': undefined },
+      })
       return r.data
     } catch (error) {
       throw error
