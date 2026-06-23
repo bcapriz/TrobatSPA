@@ -175,6 +175,9 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
                               </AdvancedMarker>
                             </Map>
                           </div>
+                          {currentReporte.location_label && (
+                            <p className="text-text-secondary text-sm mt-2">{currentReporte.location_label}</p>
+                          )}
                           <p className="text-text-muted text-xs font-mono mt-1">
                             {currentReporte.location.coordinates[1].toFixed(4)}, {currentReporte.location.coordinates[0].toFixed(4)}
                           </p>
