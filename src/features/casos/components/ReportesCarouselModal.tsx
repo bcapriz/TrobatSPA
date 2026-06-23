@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { X, ChevronLeft, ChevronRight, AlertCircle, Loader2 } from 'lucide-react'
+import { Map, AdvancedMarker } from '@vis.gl/react-google-maps'
 import type { Caso, Reporte, ReportePriority } from '../../../domain/models'
 import { useObtenerReportesCaso } from '../hooks/useObtenerReportesCaso'
 import { useValidarReporteMutation } from '../../mapa_investigacion/hooks/useValidarReporteMutation'
+import { MarkerPin } from '../../mapa_investigacion/components/MarkerPin'
+
+const MAPS_MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || 'DEMO_MAP_ID'
 
 const PRIORITY_OPTIONS: { value: ReportePriority; label: string; btnClass: string }[] = [
   { value: 'high', label: 'Alta prioridad', btnClass: 'bg-priority-high hover:bg-priority-high/80 text-white' },
@@ -148,7 +152,30 @@ export function ReportesCarouselModal({ caso, isOpen, onClose }: Props) {
                         </div>
                         <div>
                           <p className="text-xs text-text-muted uppercase tracking-wide font-medium">Ubicación</p>
-                          <p className="text-text-primary font-semibold">
+                          <div className="mt-1.5 rounded-lg overflow-hidden border border-border-soft" style={{ height: 160 }}>
+                            <Map
+                              style={{ width: '100%', height: '100%' }}
+                              center={{
+                                lat: currentReporte.location.coordinates[1],
+                                lng: currentReporte.location.coordinates[0],
+                              }}
+                              zoom={15}
+                              gestureHandling="none"
+                              disableDefaultUI
+                              colorScheme="DARK"
+                              mapId={MAPS_MAP_ID}
+                            >
+                              <AdvancedMarker
+                                position={{
+                                  lat: currentReporte.location.coordinates[1],
+                                  lng: currentReporte.location.coordinates[0],
+                                }}
+                              >
+                                <MarkerPin reporte={currentReporte} />
+                              </AdvancedMarker>
+                            </Map>
+                          </div>
+                          <p className="text-text-muted text-xs font-mono mt-1">
                             {currentReporte.location.coordinates[1].toFixed(4)}, {currentReporte.location.coordinates[0].toFixed(4)}
                           </p>
                         </div>
