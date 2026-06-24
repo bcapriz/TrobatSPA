@@ -7,4 +7,4 @@ export type {
   EstadoCaso,
   CrearCasoPayload,
 } from './Caso'
-export type { Reporte, DatosContacto, ValidarReportePayload, PriorizarReportePayload } from './Reporte'
+export type { Reporte, ReportePriority, ValidarReportePayload } from './Reporte'
